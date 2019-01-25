@@ -5,12 +5,16 @@
 #include <string>
 #include <map>
 
+#include <Network/NetServer.h>
+
 #include <Utils/Utils.h>
 #include <Utils/Log.h>
 
 #include <Scaffold/Setting.h>
 #include <Scaffold/Manager.h>
 
+
+namespace tzrpc {
 
 // 在主线程中最先初始化，所以不考虑竞争条件问题
 Manager& Manager::instance() {
@@ -30,6 +34,15 @@ bool Manager::init() {
         return false;
     }
 
+    net_server_ptr_.reset(new NetServer(setting.io_thread_pool_size_, std::string(program_invocation_short_name)));
+    if (!net_server_ptr_ || !net_server_ptr_->init()) {
+        log_err("Init NetServer failed!");
+        return false;
+    }
+
+    // do real service
+    net_server_ptr_->service();
+
     log_info("Manager all initialized...");
     initialized_ = true;
 
@@ -38,6 +51,8 @@ bool Manager::init() {
 
 
 bool Manager::service_graceful() {
+
+    net_server_ptr_->io_service_stop_graceful();
     return true;
 }
 
@@ -47,5 +62,10 @@ void Manager::service_terminate() {
 }
 
 bool Manager::service_joinall() {
+
+    net_server_ptr_->io_service_join();
     return true;
 }
+
+
+} // end tzrpc

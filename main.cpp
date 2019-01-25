@@ -109,13 +109,13 @@ int main(int argc, char* argv[]) {
 
 
     std::cout << "we using system configure file: " << cfgFile << std::endl;
-    if (!sys_config_init(cfgFile)) {
+    if (!tzrpc::sys_config_init(cfgFile)) {
         std::cout << "handle system configure " << cfgFile <<" failed!" << std::endl;
         return -1;
     }
 
     set_checkpoint_log_store_func(syslog);
-    if (!log_init(setting.log_level_)) {
+    if (!log_init(tzrpc::setting.log_level_)) {
         std::cerr << "init syslog failed!" << std::endl;
         return -1;
     }
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    (void)Manager::instance(); // create object first!
+    (void)tzrpc::Manager::instance(); // create object first!
 
     create_process_pid();
     init_signal_handle();
@@ -165,14 +165,14 @@ int main(int argc, char* argv[]) {
 
     {
         PUT_COUNT_FUNC_PERF(Manager_init);
-        if(!Manager::instance().init()) {
+        if(!tzrpc::Manager::instance().init()) {
             log_err("Manager init error!");
             ::exit(1);
         }
     }
 
     log_debug( "service initialized ok!");
-    Manager::instance().service_joinall();
+    tzrpc::Manager::instance().service_joinall();
 
     Ssl_thread_clean();
 

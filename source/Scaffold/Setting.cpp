@@ -3,6 +3,8 @@
 
 #include <Scaffold/Setting.h>
 
+namespace tzrpc {
+
 Settings setting {};
 
 libconfig::Config& get_config_object() {
@@ -48,11 +50,25 @@ bool sys_config_init(const std::string& config_file) {
 
     get_config_value("network.io_thread_pool_size", setting.io_thread_pool_size_);
     if (setting.io_thread_pool_size_ < 0 || setting.io_thread_pool_size_ > 10) {
-        fprintf(stderr, "Invalid io_thread_pool_size: %d, reset to default 4");
+        fprintf(stderr, "Invalid io_thread_pool_size: %d, reset to default 4", setting.io_thread_pool_size_);
         setting.io_thread_pool_size_ = 4;
+    }
+
+    get_config_value("network.ops_cancel_time_out", setting.ops_cancel_time_out_);
+    if (setting.ops_cancel_time_out_ < 0) {
+        fprintf(stderr, "Invalid ops_cancel_time_out: %d", setting.ops_cancel_time_out_);
+        return false;
+    }
+
+    get_config_value("max_msg_size", setting.max_msg_size_);
+    if (setting.max_msg_size_ <= 0) {
+        fprintf(stderr, "Invalid max_msg_size_: %d", setting.max_msg_size_);
+        return false;
     }
 
     return true;
 }
 
 
+
+} // end tzrpc

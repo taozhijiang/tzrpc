@@ -5,6 +5,12 @@
 #include <map>
 #include <vector>
 
+
+namespace tzrpc {
+
+
+class NetServer;
+
 class Manager {
 public:
     static Manager& instance();
@@ -24,10 +30,16 @@ private:
         // if happens, just terminate quickly
         ::exit(0);
     }
+
+
     bool initialized_;
 
 public:
+
+    std::shared_ptr<NetServer> net_server_ptr_;
 };
+
+} // end tzrpc
 
 
 #endif //__SCAFFOLD_MANAGER_H__

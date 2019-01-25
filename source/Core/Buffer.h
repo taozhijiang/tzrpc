@@ -5,10 +5,15 @@
 #include <string>
 
 #include <memory>
+#include <boost/noncopyable.hpp>
 
 #include <xtra_rhel6.h>
 
-class Buffer {
+#include <Core/Message.h>
+
+namespace tzrpc {
+
+class Buffer: public boost::noncopyable {
 public:
 
     // 构造函数
@@ -19,6 +24,16 @@ public:
 
     explicit Buffer(const std::string& data):
         data_(data.begin(), data.end()) {
+    }
+
+    explicit Buffer(const Message& msg):
+        data_({}) {
+        Header header = msg.header_;
+        header.to_net_endian();
+
+        std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
+        append(header_str);
+        append(msg.playload_);
     }
 
 
@@ -64,12 +79,8 @@ public:
 
 private:
     std::vector<char> data_;
-
-
-    // Buffer is non-copyable.
-    Buffer(const Buffer&) = delete;
-    Buffer& operator=(const Buffer&) = delete;
 };
 
+} // end tzrpc
 
 #endif // __CORE_BUFFER_H__

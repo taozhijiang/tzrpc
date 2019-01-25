@@ -7,6 +7,7 @@ using namespace ::testing;
 #include <Core/Message.h>
 #include <Core/Buffer.h>
 
+using namespace tzrpc;
 
 TEST(MessageBufferTest, MessageHeadTest) {
 

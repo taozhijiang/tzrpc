@@ -6,12 +6,13 @@
 #include <cstdint>
 #include <string>
 
+namespace tzrpc {
 
 struct Header {
 
     uint16_t magic;         // "tk" == 0x74 0x6b
     uint16_t version;       // "1"
-    uint32_t message_len;   // playload length (not include header)
+    uint32_t message_len;   // playload length ( NOT include header)
     uint64_t message_id;
 
     std::string dump() {
@@ -41,13 +42,23 @@ struct Header {
 
 struct Message {
 
-    Header header;
-    std::string playLoad;
+    Header header_;
+    std::string playload_;
+
+    std::string dump() {
+        std::string ret = "header: " + header_.dump();
+        ret += ", msg: " + playload_;
+        ret += "]]]";
+
+        return ret;
+    }
 
 };
 
 
 const static uint16_t kHeaderMagic      = 0x746b;
 const static uint16_t kHeaderVersion    = 0x1;
+
+} // end tzrpc
 
 #endif // __CORE_MESSAGE_H__

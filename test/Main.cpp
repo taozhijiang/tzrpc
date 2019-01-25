@@ -10,6 +10,8 @@
 #include <Scaffold/Setting.h>
 #include <Scaffold/Manager.h>
 
+using namespace tzrpc;
+
 int main(int argc, char** argv) {
 
     testing::InitGoogleTest(&argc, argv);
@@ -26,11 +28,6 @@ int main(int argc, char** argv) {
     if (!sys_config_init(cfgFile)) {
         std::cout << "handle system configure " << cfgFile <<" failed!" << std::endl;
         return -1;
-    }
-
-    if(!Manager::instance().init()) {
-        log_err("Manager init error!");
-        ::exit(1);
     }
 
    return RUN_ALL_TESTS();

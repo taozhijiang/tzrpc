@@ -5,6 +5,7 @@ using namespace ::testing;
 
 #include <Scaffold/Setting.h>
 
+using namespace tzrpc;
 
 TEST(LibConfigTest, SysConfigInitVefifyTest) {
 
@@ -19,4 +20,8 @@ TEST(LibConfigTest, SysConfigInitVefifyTest) {
     ASSERT_THAT(setting.bind_port_, Eq(8435));
 
     ASSERT_THAT(setting.io_thread_pool_size_, Eq(5));
+
+    ASSERT_THAT(setting.ops_cancel_time_out_, Eq(20));
+
+    ASSERT_THAT(setting.max_msg_size_, Eq(4096));
 }

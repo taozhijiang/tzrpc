@@ -67,7 +67,7 @@ add_executable( pbi_bankpay_lookup_service main.cpp build_version.cpp ${DIR_SRCS
 
 # ld iconv ?
 
-set (WHOLE_LIBS Utils Scaffold Core Protocol Network )
+set (EXTRA_LIBS Scaffold Protocol Network Core Utils )
 
 set (EXTRA_LIBS ${EXTRA_LIBS} ssl config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)

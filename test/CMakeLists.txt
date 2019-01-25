@@ -21,7 +21,7 @@ link_directories( /usr/lib64/mysql/
 aux_source_directory( ./ UNIT_TEST_SRCS )
 add_executable( test ${UNIT_TEST_SRCS} )
 
-set (EXTRA_LIBS Utils Scaffold Core Protocol Network )
+set (EXTRA_LIBS Scaffold Protocol Network Core Scaffold Utils )
 set (EXTRA_LIBS ${EXTRA_LIBS} ssl config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
 set (EXTRA_LIBS ${EXTRA_LIBS} boost_system boost_thread boost_date_time boost_regex)
