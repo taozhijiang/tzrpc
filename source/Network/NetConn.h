@@ -116,10 +116,6 @@ protected:
 };
 
 
-typedef std::shared_ptr<NetConn> NetConnPtr;
-typedef std::weak_ptr<NetConn>   NetConnWeakPtr;
-
-
 } // end tzrpc
 
 #endif // __NETWORK_NET_CONN_H__

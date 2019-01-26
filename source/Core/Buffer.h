@@ -42,6 +42,16 @@ public:
         return static_cast<uint32_t>(data_.size());
     }
 
+    uint32_t append(const Message& msg) {
+        Header header = msg.header_;
+        header.to_net_endian();
+
+        std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
+        append(header_str);
+        append(msg.playload_);
+        return static_cast<uint32_t>(data_.size());
+    }
+
     // 从队列的开头取出若干个字符，返回实际得到的字符数
     bool retrive(std::string& store, uint32_t sz) {
         if (sz == 0 || data_.empty()) {
@@ -49,8 +59,21 @@ public:
         }
 
         sz = sz > data_.size() ? data_.size() : sz;
-        std::vector<char> tmp (data_.begin() + sz, data_.end()); // 剩余的数据
-        store = std::string(data_.begin(), data_.begin() + sz);         // 要取的数据
+        std::vector<char> tmp (data_.begin() + sz, data_.end());    // 剩余的数据
+        store = std::string(data_.begin(), data_.begin() + sz);     // 要取的数据
+
+        data_.swap(tmp);
+        return true;
+    }
+
+    bool retrive(std::vector<char>& store, uint32_t sz) {
+        if (sz == 0 || data_.empty()) {
+            return false;
+        }
+
+        sz = sz > data_.size() ? data_.size() : sz;
+        std::vector<char> tmp (data_.begin() + sz, data_.end());    // 剩余的数据
+        store.assign(data_.begin(), data_.begin() + sz);     // 要取的数据
 
         data_.swap(tmp);
         return true;

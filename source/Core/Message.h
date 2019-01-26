@@ -8,6 +8,9 @@
 
 namespace tzrpc {
 
+const static uint16_t kHeaderMagic      = 0x746b;
+const static uint16_t kHeaderVersion    = 0x1;
+
 struct Header {
 
     uint16_t magic;         // "tk" == 0x74 0x6b
@@ -45,6 +48,19 @@ struct Message {
     Header header_;
     std::string playload_;
 
+    Message():
+        header_({}),
+        playload_({}) {
+    }
+
+    Message(const std::string& data):
+        header_({}),
+        playload_(data) {
+        header_.magic = kHeaderMagic;
+        header_.version = kHeaderVersion;
+        header_.message_len = data.size();
+    }
+
     std::string dump() {
         std::string ret = "header: " + header_.dump();
         ret += ", msg: " + playload_;
@@ -55,9 +71,6 @@ struct Message {
 
 };
 
-
-const static uint16_t kHeaderMagic      = 0x746b;
-const static uint16_t kHeaderVersion    = 0x1;
 
 } // end tzrpc
 

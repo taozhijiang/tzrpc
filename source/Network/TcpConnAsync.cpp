@@ -55,7 +55,8 @@ int TcpConnAsync::parse_header() {
 
     recv_bound_.header_.from_net_endian();
 
-    if (recv_bound_.header_.magic != 0x746b ||
+    if (recv_bound_.header_.magic != kHeaderMagic ||
+        recv_bound_.header_.version != kHeaderVersion ||
         recv_bound_.header_.message_len > setting.max_msg_size_) {
         log_err("message header check error!");
         return -1;
@@ -151,6 +152,8 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
 
 void TcpConnAsync::do_read_msg() {
 
+    log_debug("strand read ... in thread %#lx", (long)pthread_self());
+
     if (get_conn_stat() != ConnStat::kWorking) {
         log_err("socket status error: %d", get_conn_stat());
         return;
@@ -178,6 +181,12 @@ void TcpConnAsync::do_read_msg() {
         if (ret == 0) {
             log_debug("good, read msg finished...");
             log_debug("recv: %s", msg.dump().c_str());
+
+            // write back msg:
+            Message msg("message from server ...\r\n");
+            send_bound_.buffer_.append(msg);
+            do_write();
+
             return do_read(); // read again for future
         } else if(ret > 0) {
             return do_read_msg();
@@ -209,6 +218,12 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
     if (ret == 0) {
         log_debug("good, read msg finished...");
         log_debug("recv: %s", msg.dump().c_str());
+
+        // write back msg:
+        Message msg("message from server ...\r\n");
+        send_bound_.buffer_.append(msg);
+        do_write();
+
         return do_read();
     } else if(ret > 0) {
         return do_read_msg();
@@ -222,34 +237,41 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
 
 void TcpConnAsync::do_write() override {
 
-#if 0
-    if (get_conn_stat() != ConnStat::kConnWorking) {
-        log_err("Socket Status Error: %d", get_conn_stat());
+    log_debug("strand write ... in thread %#lx", (long)pthread_self());
+
+    if (get_conn_stat() != ConnStat::kWorking) {
+        log_err("socket status error: %d", get_conn_stat());
         return;
     }
 
-    SAFE_ASSERT(w_size_);
-    SAFE_ASSERT(w_pos_ < w_size_);
+    if (was_ops_cancelled()) {
+        log_err("socket operation canceled");
+        return;
+    }
 
-    log_debug("strand write async_write exactly... in thread thread %#lx", (long)pthread_self());
+    if (send_bound_.buffer_.get_length() == 0) {
+        return;
+    }
+
+    uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
+                                 (uint32_t)(send_bound_.io_block_.size()));
+
+    send_bound_.buffer_.retrive(send_bound_.io_block_, to_write);
 
     set_ops_cancel_timeout();
-    async_write(*sock_ptr_, buffer(p_write_->data() + w_pos_, w_size_ - w_pos_),
-                    boost::asio::transfer_at_least(w_size_ - w_pos_),
+    async_write(*socket_, buffer(send_bound_.io_block_.data(), to_write),
+                    boost::asio::transfer_at_least(to_write),
                               strand_->wrap(
                                  std::bind(&TcpConnAsync::write_handler,
                                      shared_from_this(),
                                      std::placeholders::_1,
                                      std::placeholders::_2)));
-#endif
     return;
 }
 
 
 void TcpConnAsync::write_handler(const boost::system::error_code& ec, size_t bytes_transferred) {
 
-#if 0
-    http_server_.conn_touch(shared_from_this());
     revoke_ops_cancel_timeout();
 
     if (ec) {
@@ -257,28 +279,11 @@ void TcpConnAsync::write_handler(const boost::system::error_code& ec, size_t byt
         return;
     }
 
+    // transfer_at_least 应该可以将需要的数据传输完，除非错误发生了
     SAFE_ASSERT(bytes_transferred > 0);
 
-    w_pos_ += bytes_transferred;
-
-    if (w_pos_ < w_size_) {
-
-        if (was_ops_cancelled()) {
-            handle_socket_ec(ec);
-            return;
-        }
-
-        log_debug("need additional write operation: %lu ~ %lu", w_pos_, w_size_);
-        do_write();
-
-    } else {
-
-        // reset
-        w_pos_ = w_size_ = 0;
-
-    }
-
-#endif
+    // 再次触发写，如果为空就直接返回
+    do_write();
 }
 
 
