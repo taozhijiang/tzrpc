@@ -4,9 +4,6 @@
 #include <Network/NetConn.h>
 #include <Utils/Log.h>
 
-#include <Core/Message.h>
-#include <Core/Buffer.h>
-
 namespace tzrpc {
 
 class NetServer;
@@ -17,18 +14,6 @@ typedef std::shared_ptr<TcpConnAsync> TcpConnAsyncPtr;
 typedef std::weak_ptr<TcpConnAsync>   TcpConnAsyncWeakPtr;
 
 
-struct IOBound {
-    IOBound():
-        io_block_({}),
-        header_({}),
-        buffer_() {
-        io_block_.resize(8*1024);
-    }
-
-    std::vector<char> io_block_;    // 读写操作的固定缓存
-    Header header_;                 // 如果 > sizeof(Header), head转换成host order
-    Buffer buffer_;                 // 已经传输字节
-};
 
 class TcpConnAsync: public NetConn, public boost::noncopyable,
                     public std::enable_shared_from_this<TcpConnAsync> {
@@ -42,8 +27,10 @@ public:
     virtual void start();
     void stop();
 
-    // http://www.boost.org/doc/libs/1_44_0/doc/html/boost_asio/reference/error__basic_errors.html
-    bool handle_socket_ec(const boost::system::error_code& ec);
+    void async_send_message(const Message& msg) {
+        send_bound_.buffer_.append(msg);
+        do_write();
+    }
 
 private:
 
@@ -98,6 +85,10 @@ private:
     std::shared_ptr<io_service::strand> strand_;
 
 private:
+
+    // http://www.boost.org/doc/libs/1_44_0/doc/html/boost_asio/reference/error__basic_errors.html
+    bool handle_socket_ec(const boost::system::error_code& ec);
+
 
     IOBound recv_bound_;
     IOBound send_bound_;

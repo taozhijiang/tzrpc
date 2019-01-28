@@ -42,9 +42,13 @@ bool sys_config_init(const std::string& config_file) {
     }
 
     get_config_value("network.bind_addr", setting.bind_ip_);
+    get_config_value("network.serv_addr", setting.serv_ip_);
     get_config_value("network.listen_port", setting.bind_port_);
-    if (setting.bind_ip_.empty() || setting.bind_port_ < 0) {
-        fprintf(stderr, "Invalid server network address: %s:%d", setting.bind_ip_.c_str(),  setting.bind_port_);
+    if (setting.bind_ip_.empty() ||
+        setting.serv_ip_.empty() ||
+        setting.bind_port_ < 0) {
+        fprintf(stderr, "Invalid server network address: %s-%s:%d",
+                setting.bind_ip_.c_str(), setting.serv_ip_.c_str(), setting.bind_port_);
         return false;
     }
 
@@ -60,9 +64,21 @@ bool sys_config_init(const std::string& config_file) {
         return false;
     }
 
-    get_config_value("max_msg_size", setting.max_msg_size_);
+    get_config_value("network.client_ops_cancel_time_out", setting.client_ops_cancel_time_out_);
+    if (setting.client_ops_cancel_time_out_ < 0) {
+        fprintf(stderr, "Invalid client_ops_cancel_time_out: %d", setting.client_ops_cancel_time_out_);
+        return false;
+    }
+
+    get_config_value("network.max_msg_size", setting.max_msg_size_);
     if (setting.max_msg_size_ <= 0) {
-        fprintf(stderr, "Invalid max_msg_size_: %d", setting.max_msg_size_);
+        fprintf(stderr, "Invalid max_msg_size: %d", setting.max_msg_size_);
+        return false;
+    }
+
+    get_config_value("rpc.call_time_out", setting.rpc_call_time_out_);
+    if (setting.rpc_call_time_out_ < 0) {
+        fprintf(stderr, "Invalid rpc.call_time_out: %d", setting.rpc_call_time_out_);
         return false;
     }
 

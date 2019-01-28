@@ -6,22 +6,23 @@
 #include <cstdint>
 #include <string>
 
+#include <Utils/Utils.h>
+
 namespace tzrpc {
 
 const static uint16_t kHeaderMagic      = 0x746b;
-const static uint16_t kHeaderVersion    = 0x1;
+const static uint16_t kHeaderVersion    = 0x01;
 
 struct Header {
 
     uint16_t magic;         // "tk" == 0x74 0x6b
     uint16_t version;       // "1"
-    uint32_t message_len;   // playload length ( NOT include header)
-    uint64_t message_id;
+    uint32_t length;        // playload length ( NOT include header)
 
-    std::string dump() {
+    std::string dump() const {
         char msg[64] {};
-        snprintf(msg, sizeof(msg), "mgc:%0x, ver:%0x, len:%u, id:%lu",
-                 magic, version, message_len, message_id);
+        snprintf(msg, sizeof(msg), "mgc:%0x, ver:%0x, len:%u",
+                 magic, version, length);
         return msg;
     }
 
@@ -29,15 +30,13 @@ struct Header {
     void from_net_endian() {
         magic   = be16toh(magic);
         version = be16toh(version);
-        message_len = be32toh(message_len);
-        message_id  = be64toh(message_id);
+        length  = be32toh(length);
     }
 
     void to_net_endian() {
         magic   = htobe16(magic);
         version = htobe16(version);
-        message_len = htobe32(message_len);
-        message_id  = htobe64(message_id);
+        length  = htobe32(length);
     }
 
 } __attribute__ ((__packed__));
@@ -53,20 +52,28 @@ struct Message {
         playload_({}) {
     }
 
-    Message(const std::string& data):
+    explicit Message(const std::string& data):
         header_({}),
         playload_(data) {
         header_.magic = kHeaderMagic;
         header_.version = kHeaderVersion;
-        header_.message_len = data.size();
+        header_.length = data.size();
     }
 
-    std::string dump() {
+    std::string dump() const {
         std::string ret = "header: " + header_.dump();
-        ret += ", msg: " + playload_;
+        ret += ", msg_len: " + convert_to_string(playload_.size());
         ret += "]]]";
 
         return ret;
+    }
+
+    std::string net_str() const {
+        Header header = header_;
+        header.to_net_endian();
+        std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
+
+        return header_str + playload_;
     }
 
 };

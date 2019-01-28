@@ -7,6 +7,8 @@
 #include <Network/NetServer.h>
 #include <Network/TcpConnAsync.h>
 
+#include <RPC/RpcInstance.h>
+#include <RPC/Dispatcher.h>
 
 namespace tzrpc {
 
@@ -57,7 +59,7 @@ int TcpConnAsync::parse_header() {
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion ||
-        recv_bound_.header_.message_len > setting.max_msg_size_) {
+        recv_bound_.header_.length > setting.max_msg_size_) {
         log_err("message header check error!");
         return -1;
     }
@@ -116,7 +118,7 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
     SAFE_ASSERT(bytes_transferred > 0);
 
     std::string str(recv_bound_.io_block_.begin(), recv_bound_.io_block_.begin() + bytes_transferred);
-    recv_bound_.buffer_.append(str);
+    recv_bound_.buffer_.append_internal(str);
 
     SAFE_ASSERT(recv_bound_.buffer_.get_length() >= sizeof(Header));
 
@@ -134,15 +136,15 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
 
 int TcpConnAsync::parse_msg_body(Message& msg) {
 
-    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= recv_bound_.header_.message_len);
-    if (recv_bound_.buffer_.get_length() < recv_bound_.header_.message_len) {
+    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= recv_bound_.header_.length);
+    if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
         log_err("we expect at least message read: %d, but get %d",
-                static_cast<int>(recv_bound_.header_.message_len), static_cast<int>(recv_bound_.buffer_.get_length()));
+                static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
 
     std::string msg_str;
-    recv_bound_.buffer_.retrive(msg_str, recv_bound_.header_.message_len);
+    recv_bound_.buffer_.retrive(msg_str, recv_bound_.header_.length);
 
     msg.header_ = recv_bound_.header_;
     msg.playload_ = msg_str;
@@ -164,8 +166,8 @@ void TcpConnAsync::do_read_msg() {
         return;
     }
 
-    if (recv_bound_.buffer_.get_length() < recv_bound_.header_.message_len) {
-        uint32_t to_read = std::min((uint32_t)(recv_bound_.header_.message_len - recv_bound_.buffer_.get_length()),
+    if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
+        uint32_t to_read = std::min((uint32_t)(recv_bound_.header_.length - recv_bound_.buffer_.get_length()),
                                     (uint32_t)(recv_bound_.io_block_.size()));
         set_ops_cancel_timeout();
         async_read(*socket_, buffer(recv_bound_.io_block_.data(), recv_bound_.io_block_.size()),
@@ -179,13 +181,12 @@ void TcpConnAsync::do_read_msg() {
         Message msg;
         int ret = parse_msg_body(msg);
         if (ret == 0) {
-            log_debug("good, read msg finished...");
-            log_debug("recv: %s", msg.dump().c_str());
 
-            // write back msg:
-            Message msg("message from server ...\r\n");
-            send_bound_.buffer_.append(msg);
-            do_write();
+            // 转发到RPC请求
+            log_debug("read_message: %s", msg.dump().c_str());
+            log_debug("read message finished, dispatch for RPC process.");
+            auto instance = std::make_shared<RpcInstance>(msg.playload_, shared_from_this());
+            Dispatcher::instance().handle_RPC(instance);
 
             return do_read(); // read again for future
         } else if(ret > 0) {
@@ -211,18 +212,17 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
     SAFE_ASSERT(bytes_transferred > 0);
 
     std::string str(recv_bound_.io_block_.begin(), recv_bound_.io_block_.begin() + bytes_transferred);
-    recv_bound_.buffer_.append(str);
+    recv_bound_.buffer_.append_internal(str);
 
     Message msg;
     int ret = parse_msg_body(msg);
     if (ret == 0) {
-        log_debug("good, read msg finished...");
-        log_debug("recv: %s", msg.dump().c_str());
 
-        // write back msg:
-        Message msg("message from server ...\r\n");
-        send_bound_.buffer_.append(msg);
-        do_write();
+        // 转发到RPC请求
+        log_debug("read_message: %s", msg.dump().c_str());
+        log_debug("read message finished, dispatch for RPC process.");
+        auto instance = std::make_shared<RpcInstance>(msg.playload_, shared_from_this());
+        Dispatcher::instance().handle_RPC(instance);
 
         return do_read();
     } else if(ret > 0) {
@@ -279,7 +279,8 @@ void TcpConnAsync::write_handler(const boost::system::error_code& ec, size_t byt
         return;
     }
 
-    // transfer_at_least 应该可以将需要的数据传输完，除非错误发生了
+    // transfer_at_least 应该可以保证将需要的数据传输完，除非错误发生了
+    // TODO 后续保证优化
     SAFE_ASSERT(bytes_transferred > 0);
 
     // 再次触发写，如果为空就直接返回

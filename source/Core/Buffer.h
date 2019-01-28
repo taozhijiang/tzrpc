@@ -1,4 +1,4 @@
-#ifndef __CORE_BUFFER_H___
+#ifndef __CORE_BUFFER_H__
 #define __CORE_BUFFER_H__
 
 #include <cstdint>
@@ -14,8 +14,8 @@
 namespace tzrpc {
 
 class Buffer: public boost::noncopyable {
-public:
 
+public:
     // 构造函数
 
     Buffer():
@@ -32,23 +32,24 @@ public:
         header.to_net_endian();
 
         std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
-        append(header_str);
-        append(msg.playload_);
+        append_internal(header_str);
+        append_internal(msg.playload_);
     }
 
-
-    uint32_t append(const std::string& data) {
+    // used internally, user should prefer Message
+    uint32_t append_internal(const std::string& data) {
         std::copy(data.begin(), data.end(), std::back_inserter(data_));
         return static_cast<uint32_t>(data_.size());
     }
+
 
     uint32_t append(const Message& msg) {
         Header header = msg.header_;
         header.to_net_endian();
 
         std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
-        append(header_str);
-        append(msg.playload_);
+        append_internal(header_str);
+        append_internal(msg.playload_);
         return static_cast<uint32_t>(data_.size());
     }
 
@@ -101,6 +102,7 @@ public:
     }
 
 private:
+
     std::vector<char> data_;
 };
 

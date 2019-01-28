@@ -13,6 +13,9 @@
 #include <Scaffold/Setting.h>
 #include <Scaffold/Manager.h>
 
+#include <RPC/Dispatcher.h>
+#include <Protocol/Common.h>
+#include <Protocol/ServiceImpl/XtraTaskService.h>
 
 namespace tzrpc {
 
@@ -39,6 +42,11 @@ bool Manager::init() {
         log_err("Init NetServer failed!");
         return false;
     }
+
+    std::shared_ptr<Service> xtra_task_service = std::make_shared<XtraTaskService>("XtraTask");
+    Dispatcher::instance().register_service(ServiceID::XTRA_TASK_SERVICE, xtra_task_service);
+
+    Dispatcher::instance().init();
 
     // do real service
     net_server_ptr_->service();

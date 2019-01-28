@@ -81,11 +81,24 @@ private:
     ip::tcp::endpoint ep_;
     std::unique_ptr<ip::tcp::acceptor> acceptor_;
 
-public:
+private:
     ThreadPool io_service_threads_;
     void io_service_run(ThreadObjPtr ptr);  // main task loop
-    int io_service_stop_graceful();
-    int io_service_join();
+
+public:
+    int io_service_stop_graceful() {
+
+        log_err("about to stop io_service... ");
+
+        io_service_.stop();
+        io_service_threads_.graceful_stop_threads();
+        return 0;
+    }
+
+    int io_service_join() {
+        io_service_threads_.join_threads();
+        return 0;
+    }
 
 };
 

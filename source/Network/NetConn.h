@@ -3,6 +3,9 @@
 
 #include <xtra_asio.h>
 
+#include <Core/Buffer.h>
+#include <Core/Message.h>
+
 namespace tzrpc {
 
 enum ConnStat {
@@ -113,6 +116,21 @@ private:
 
 protected:
     std::shared_ptr<ip::tcp::socket> socket_;
+};
+
+
+
+struct IOBound {
+    IOBound():
+        io_block_({}),
+        header_({}),
+        buffer_() {
+        io_block_.resize(8*1024);
+    }
+
+    std::vector<char> io_block_;    // 读写操作的固定缓存
+    Header header_;                 // 如果 > sizeof(Header), head转换成host order
+    Buffer buffer_;                 // 已经传输字节
 };
 
 

@@ -75,21 +75,5 @@ void NetServer::io_service_run(ThreadObjPtr ptr) {
     return;
 }
 
-//
-
-int NetServer::io_service_stop_graceful() {
-
-    log_err("about to stop io_service... ");
-    io_service_.stop();
-    io_service_threads_.graceful_stop_threads();
-    return 0;
-}
-
-int NetServer::io_service_join() {
-
-    io_service_threads_.join_threads();
-    return 0;
-}
-
 
 } // end tzrpc

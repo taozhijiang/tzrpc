@@ -12,12 +12,17 @@ struct Settings {
     int         log_level_;
 
     std::string bind_ip_;
+    std::string serv_ip_;
     int         bind_port_;
 
     int         io_thread_pool_size_;
-    int         ops_cancel_time_out_;
 
-    int         max_msg_size_;  // 最大消息负载(不包含头部)
+    int         ops_cancel_time_out_;
+    int         client_ops_cancel_time_out_;
+
+    int         max_msg_size_;        // 最大消息负载(不包含头部)
+
+    int         rpc_call_time_out_;
 
 };
 

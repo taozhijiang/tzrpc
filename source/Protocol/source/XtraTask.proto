@@ -1,46 +1,69 @@
 
+package tzrpc.XtraTask;
+
+
+enum OpCode {
+    CMD_SET = 1;
+    CMD_GET = 2;
+};
+
 enum Status {
 
     UNKNOWN             = 10;
-
     OK                  = 0;
 
     INVALID_ARGUMENT    = 1;
     CONDITION_NOT_MET   = 2;
-
     OPERATION_ERROR     = 3;
     TIMEOUT             = 4;
 };
 
-message XtraRead {
 
+message XtraReadOps {
+
+    // 所有请求报文
     message Request {
+
         message Get {
             required string key = 1;
         }
-        optional Get get = 1;
+        optional Get get = 3;
+
     }
 
+    // 所有响应报文
     message Response {
-        required Status status = 1;
-        optional string result = 3;
+
+        optional Status status = 1;
+        optional string error  = 2;
+
+        message Get {
+            required string value = 1;
+        }
+        optional Get get = 3;
+
     }
 }
 
 
-message XtraWrite {
+message XtraWriteOps {
 
+    // 所有请求报文
     message Request {
+
         message Set {
-            required string key = 1;
-            required string val = 2;
+            required string key   = 1;
+            required string value = 2;
         }
-        optional Set set = 1;
+        optional Set set = 3;
+
     }
 
     message Response {
-        required Status status = 1;
-        optional string result = 3;
+
+        optional Status status = 1;
+        optional string error  = 2;
+
     }
 }
 

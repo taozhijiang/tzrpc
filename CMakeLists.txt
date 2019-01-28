@@ -42,9 +42,9 @@ set (INCLUDE_DIRS
 )
 include_directories( ${INCLUDE_DIRS} )
 	
+add_subdirectory( source/RPC )
 add_subdirectory( source/Utils )
 add_subdirectory( source/Scaffold )
-add_subdirectory( source/Core )
 add_subdirectory( source/Protocol )
 add_subdirectory( source/Network )
 
@@ -67,7 +67,7 @@ add_executable( pbi_bankpay_lookup_service main.cpp build_version.cpp ${DIR_SRCS
 
 # ld iconv ?
 
-set (EXTRA_LIBS Scaffold Protocol Network Core Utils )
+set (EXTRA_LIBS Scaffold RPC Network Protocol Utils )
 
 set (EXTRA_LIBS ${EXTRA_LIBS} ssl config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)

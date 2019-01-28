@@ -22,6 +22,10 @@ TEST(LibConfigTest, SysConfigInitVefifyTest) {
     ASSERT_THAT(setting.io_thread_pool_size_, Eq(5));
 
     ASSERT_THAT(setting.ops_cancel_time_out_, Eq(20));
+    ASSERT_THAT(setting.client_ops_cancel_time_out_, Eq(10));
 
     ASSERT_THAT(setting.max_msg_size_, Eq(4096));
+
+    ASSERT_THAT(setting.rpc_call_time_out_, Eq(20));
+
 }

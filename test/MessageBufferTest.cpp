@@ -15,8 +15,7 @@ TEST(MessageBufferTest, MessageHeadTest) {
 
     head.magic   = kHeaderMagic;
     head.version = kHeaderVersion;
-    head.message_len = 0;
-    head.message_id  = 0;
+    head.length  = 0;
 
     std::cout << head.dump() << std::endl;
 
@@ -37,7 +36,7 @@ TEST(MessageBufferTest, BufferTest) {
     ASSERT_THAT(buff.get_length(), Eq(str1.size()));
 
     const std::string str2 = "taokan";
-    buff.append(str2);
+    buff.append_internal(str2);
     ASSERT_THAT(strncmp(buff.get_data(), "nicoltaokan", buff.get_length()), Eq(0));
     ASSERT_THAT(buff.get_length(), Eq(str1.size() + str2.size()));
 
