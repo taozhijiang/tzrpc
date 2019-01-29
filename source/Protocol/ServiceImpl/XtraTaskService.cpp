@@ -1,5 +1,6 @@
 
 #include <Utils/Log.h>
+#include <Core/ProtoBuf.h>
 
 #include "XtraTaskService.h"
 
@@ -11,50 +12,69 @@ void XtraTaskService::handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) over
 
     // Call the appropriate RPC handler based on the request's opCode.
     switch (rpc_instance->get_opcode()) {
-        case OpCode::CMD_GET:
-            read_impl(rpc_instance);
+        case OpCode::CMD_READ:
+            read_ops_impl(rpc_instance);
             break;
-        case OpCode::CMD_SET:
-            write_impl(rpc_instance);
+        case OpCode::CMD_WRITE:
+            write_ops_impl(rpc_instance);
             break;
 
         default:
             log_err("Received RPC request with unknown opcode %u: "
                     "rejecting it as invalid request",
                     rpc_instance->get_opcode());
+            rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);
     }
 }
 
 
-/**
- * Place this at the top of each RPC handler. Afterwards, 'request' will refer
- * to the protocol buffer for the request with all required fields set.
- * 'response' will be an empty protocol buffer for you to fill in the response.
- */
-#define PRELUDE(rpcClass) \
-    XtraTask::rpcClass::Request request; \
-    XtraTask::rpcClass::Response response; \
-    if (!rpc.getRequest(request)) \
-        return;
+void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
 
-////////// RPC handlers //////////
+    // 再做一次opcode校验
+    RpcRequestMessage& rpc_request_message = rpc_instance->get_rpc_request_message();
+    if (rpc_request_message.header_.opcode != XtraTask::OpCode::CMD_READ) {
+        log_err("invalid opcode %u in service XtraTask.", rpc_request_message.header_.opcode);
+        rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);
+    }
 
+    XtraTask::XtraReadOps::Response response;
+    response.set_code(0);
+    response.set_msg("OK");
 
-void XtraTaskService::read_impl(std::shared_ptr<RpcInstance> rpc_instance) {
+    do {
 
-    #if 0
-    PRELUDE(XtraReadOps);
+        // 消息体的unmarshal
+        XtraTask::XtraReadOps::Request request;
+        if (!ProtoBuf::unmarshalling_from_string(rpc_request_message.payload_, &request)) {
+            log_err("unmarshal request failed.");
+            response.set_code(-1);
+            response.set_msg("参数错误");
+            break;
+        }
 
-    rpc.reply(response);
-    #endif
+        // 相同类目下的子RPC分发
+        if (request.has_ping()) {
+            log_debug("XtraTask::XtraReadOps::ping -> %s", request.ping().msg().c_str());
+            response.mutable_ping()->set_msg("[[[pong]]]");
+            break;
+        } else if (request.has_gets()) {
+            log_debug("XtraTask::XtraReadOps::get -> %s", request.gets().key().c_str());
+            response.mutable_gets()->set_value("[[[pong]]]");
+            break;
+        } else {
+            log_err("undetected specified service call.");
+            rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);
+            return;
+        }
 
-    const RpcRequestMessage& msg = rpc_instance->get_rpc_request_message();
-    log_debug(" read ops recv: %s", msg.dump().c_str());
+    } while (0);
 
-    rpc_instance->reply_rpc_message("nicol_read_reply");
+    std::string response_str;
+    ProtoBuf::marshalling_to_string(response, &response_str);
+    rpc_instance->reply_rpc_message(response_str);
 }
 
-void XtraTaskService::write_impl(std::shared_ptr<RpcInstance> rpc_instance) {
+void XtraTaskService::write_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
 
     #if 0
     PRELUDE(XtraWriteCmd);

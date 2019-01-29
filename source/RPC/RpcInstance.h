@@ -27,7 +27,7 @@ public:
 
     bool validate_request();
 
-    bool reply_rpc_message(const std::string& msg);
+    void reply_rpc_message(const std::string& msg);
     // 返回系统性的错误
     void reject(RpcResponseStatus status);
     // 返回业务相关的错误

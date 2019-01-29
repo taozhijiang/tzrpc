@@ -60,7 +60,7 @@ public:
 
         if (!rpc_instance->validate_request()) {
             log_err("validate RpcInstance failed.");
-            // todo ..
+            rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);
             return;
         }
 
@@ -74,6 +74,7 @@ public:
         } else {
             log_err("found service_impl for %u:%u failed.",
                     rpc_instance->get_service_id(),  rpc_instance->get_opcode());
+            rpc_instance->reject(RpcResponseStatus::INVALID_SERVICE);
         }
     }
 

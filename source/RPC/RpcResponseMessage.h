@@ -21,6 +21,7 @@ enum class RpcResponseStatus : uint8_t {
     /**
      * An error specific to the particular service. The format of the remainder
      * of the message is specific to the particular service.
+     * 暂未使用
      */
     SERVICE_SPECIFIC_ERROR = 1,
 
@@ -82,10 +83,19 @@ struct RpcResponseMessage {
     RpcResponseMessage(uint16_t serviceid, uint16_t opcd, const std::string& data):
         header_({}),
         payload_(data) {
+        header_.status = RpcResponseStatus::OK;
         header_.magic = kRpcHeaderMagic;
         header_.version = kRpcHeaderVersion;
         header_.service_id = serviceid;
         header_.opcode = opcd;
+    }
+
+    explicit RpcResponseMessage(enum RpcResponseStatus status):
+        header_({}),
+        payload_() {
+        header_.status = status;
+        header_.magic = kRpcHeaderMagic;
+        header_.version = kRpcHeaderVersion;
     }
 
     std::string dump() const {

@@ -26,7 +26,6 @@ void Executor::executor_service_run(ThreadObjPtr ptr) {
         }
 
         if (!rpc_queue_.POP(rpc_instance, 1000 /*1s*/) || !rpc_instance) {
-            log_debug("pop timeout return!");
             continue;
         }
 

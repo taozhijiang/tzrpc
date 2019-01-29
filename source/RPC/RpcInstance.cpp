@@ -39,22 +39,35 @@ bool RpcInstance::validate_request() {
 }
 
 
-bool RpcInstance::reply_rpc_message(const std::string& msg) {
+void RpcInstance::reply_rpc_message(const std::string& msg) {
 
-    RpcResponseMessage rpc_rsp_msg(service_id_, opcode_,  msg);
-    Message net_msg(rpc_rsp_msg.net_str());
+    RpcResponseMessage rpc_response_message(service_id_, opcode_,  msg);
+    Message net_msg(rpc_response_message.net_str());
 
     auto sock = full_socket_.lock();
     if (!sock) {
         log_err("socket already release before.");
-        return false;
+        return;
     }
 
     sock->async_send_message(net_msg);
-    return true;
+    return;
 }
 
-void reject(RpcResponseStatus status);
+void RpcInstance::reject(RpcResponseStatus status) {
+
+    RpcResponseMessage rpc_response_message(status);
+    Message net_msg(rpc_response_message.net_str());
+
+    auto sock = full_socket_.lock();
+    if (!sock) {
+        log_err("socket already release before.");
+        return;
+    }
+
+    sock->async_send_message(net_msg);
+    return;
+}
 
 
 

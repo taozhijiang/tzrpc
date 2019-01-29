@@ -1,5 +1,6 @@
 #include <memory>
 #include <string>
+#include <sstream>
 
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
@@ -13,18 +14,21 @@ namespace google {
 namespace protobuf {
 
 // 支持Protobuf的相等比较，可以用于单元测试
+static inline
 bool operator==(const Message& a, const Message& b) {
     return (a.GetTypeName() == b.GetTypeName() &&
             a.DebugString() == b.DebugString());
 }
 
 
+static inline
 bool operator!=(const Message& a, const Message& b) {
 	return !(a == b);
 }
 
 // Equality and inequality between protocol buffers and their text format
 // representations. These are useful for testing.
+static inline
 bool operator==(const Message& a, const std::string& bStr) {
 
     // Create new instance of the same type
@@ -36,14 +40,17 @@ bool operator==(const Message& a, const std::string& bStr) {
     return (a == *b);
 }
 
+static inline
 bool operator==(const std::string& a, const Message& b) {
 	return (b == a);
 }
 
+static inline
 bool operator!=(const Message& a, const std::string& b) {
 	return !(a == b);
 }
 
+static inline
 bool operator!=(const std::string& a, const Message& b) {
 	return !(a == b);
 }
@@ -124,7 +131,11 @@ public:
 };
 
 
-#endif // __CORE_PROTOBUF_H__
 
 
 } // end tzrpc
+
+
+
+
+#endif // __CORE_PROTOBUF_H__

@@ -187,7 +187,7 @@ bool TcpConnSync::do_write() override {
         }
 
         // TODO
-        // 传输返回值的检测喝处理
+        // 传输返回值的检测和处理
 
     }
 

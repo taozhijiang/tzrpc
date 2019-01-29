@@ -27,8 +27,8 @@ public:
 private:
 
     ////////// RPC handlers //////////
-    void read_impl(std::shared_ptr<RpcInstance> rpc_instance);
-    void write_impl(std::shared_ptr<RpcInstance> rpc_instance);
+    void read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance);
+    void write_ops_impl(std::shared_ptr<RpcInstance> rpc_instance);
 
     const std::string instance_name_;
 

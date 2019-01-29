@@ -1,56 +1,45 @@
 
 package tzrpc.XtraTask;
 
-
 enum OpCode {
-    CMD_SET = 1;
-    CMD_GET = 2;
+    CMD_READ = 1;
+    CMD_WRITE = 2;
 };
-
-enum Status {
-
-    UNKNOWN             = 10;
-    OK                  = 0;
-
-    INVALID_ARGUMENT    = 1;
-    CONDITION_NOT_MET   = 2;
-    OPERATION_ERROR     = 3;
-    TIMEOUT             = 4;
-};
-
 
 message XtraReadOps {
 
     // 所有请求报文
     message Request {
 
-        message Get {
-            required string key = 1;
-        }
-        optional Get get = 3;
-
         message Ping {
             required string msg = 1;
         }
-        optional Ping ping = 4;
+        optional Ping ping      = 3;
+
+        message Get {
+            required string key = 1;
+        }
+        optional Get gets       = 4;
+
 
     }
 
     // 所有响应报文
     message Response {
 
-        optional Status status = 1;
-        optional string error  = 2;
-
-        message Get {
-            required string value = 1;
-        }
-        optional Get get = 3;
+        optional int32  code = 1;
+        optional string msg  = 2;
 
         message Ping {
             required string msg = 1;
         }
-        optional Ping ping = 4;
+        optional Ping ping  = 3;
+
+        message Get {
+            required string value = 1;
+        }
+        optional Get gets    = 4;
+
 
     }
 }
@@ -71,8 +60,8 @@ message XtraWriteOps {
 
     message Response {
 
-        optional Status status = 1;
-        optional string error  = 2;
+        optional int32  code = 1;
+        optional string msg  = 2;
 
     }
 }

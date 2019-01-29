@@ -70,12 +70,12 @@ TEST(ClientSmokeTest, RpcClientTest) {
     log_debug("create client with %s:%u", setting.serv_ip_.c_str(), setting.bind_port_);
 
     std::string rsp_str1;
-    client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_GET, msg_str, rsp_str1);
+    client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, msg_str, rsp_str1);
     log_debug("rpc_call_result: %s", rsp_str1.c_str());
     ASSERT_THAT(rsp_str1.size(), Gt(0));
 
     std::string rsp_str2;
-    client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_SET, msg_str, rsp_str2);
+    client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_WRITE, msg_str, rsp_str2);
     log_debug("rpc_call_result: %s", rsp_str2.c_str());
     ASSERT_THAT(rsp_str2.size(), Gt(0));
 }

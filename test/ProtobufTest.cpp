@@ -18,7 +18,7 @@ message XtraReadOps {
         message Get {
             required string key = 1;
         }
-        optional Get get = 3;
+        optional Get gets = 3;
 
         message Ping {
             required string msg = 1;
@@ -36,10 +36,10 @@ TEST(ProtobufTest, MarshalandUnmarshalTest) {
 
     ASSERT_THAT(request.IsInitialized(), Eq(true));  // all optional
 
-    request.mutable_get()->set_key("nicol");
+    request.mutable_gets()->set_key("nicol");
     ASSERT_THAT(request.IsInitialized(), Eq(true));
 
-    ASSERT_THAT(request.get().key(), Eq("nicol"));
+    ASSERT_THAT(request.gets().key(), Eq("nicol"));
 
     request.mutable_ping()->set_msg("ping_msg");
 
