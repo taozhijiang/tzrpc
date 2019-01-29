@@ -2,6 +2,6 @@
 
 Based on:    
 1. boost::asio async and sync network library.   
-2. protobuf message marshal and unmarshal.   
+2. protobuf message for marshalling/unmarshalling.   
 3. gtest unit_test framework.   
 
