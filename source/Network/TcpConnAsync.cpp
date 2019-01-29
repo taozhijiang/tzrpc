@@ -147,7 +147,7 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
     recv_bound_.buffer_.retrive(msg_str, recv_bound_.header_.length);
 
     msg.header_ = recv_bound_.header_;
-    msg.playload_ = msg_str;
+    msg.payload_ = msg_str;
 
     return 0;
 }
@@ -185,7 +185,7 @@ void TcpConnAsync::do_read_msg() {
             // 转发到RPC请求
             log_debug("read_message: %s", msg.dump().c_str());
             log_debug("read message finished, dispatch for RPC process.");
-            auto instance = std::make_shared<RpcInstance>(msg.playload_, shared_from_this());
+            auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this());
             Dispatcher::instance().handle_RPC(instance);
 
             return do_read(); // read again for future
@@ -221,7 +221,7 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
         // 转发到RPC请求
         log_debug("read_message: %s", msg.dump().c_str());
         log_debug("read message finished, dispatch for RPC process.");
-        auto instance = std::make_shared<RpcInstance>(msg.playload_, shared_from_this());
+        auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this());
         Dispatcher::instance().handle_RPC(instance);
 
         return do_read();

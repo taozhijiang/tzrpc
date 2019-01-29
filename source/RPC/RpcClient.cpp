@@ -7,13 +7,13 @@ namespace tzrpc {
 static boost::asio::io_service IO_SERVICE;
 
 
-bool RpcClient::send_rpc_message(const RpcMessage& rpc_message) {
-    Message net_msg(rpc_message.net_str());
+bool RpcClient::send_rpc_message(const RpcRequestMessage& rpc_request_message) {
+    Message net_msg(rpc_request_message.net_str());
     return conn_->send_net_message(net_msg);
 }
 
 
-bool RpcClient::recv_rpc_message(RpcMessage& rpc_message) {
+bool RpcClient::recv_rpc_message(RpcResponseMessage& rpc_response_message) {
 
     Message net_msg;
     if (!conn_->recv_net_message(net_msg)) {
@@ -21,7 +21,7 @@ bool RpcClient::recv_rpc_message(RpcMessage& rpc_message) {
     }
 
     // parse
-    return RpcMessageParse(net_msg.playload_, rpc_message);
+    return RpcResponseMessageParse(net_msg.payload_, rpc_response_message);
 }
 
 int RpcClient::call_RPC(uint16_t service_id, uint16_t opcode, const std::string& playload, std::string& respload) {
@@ -43,16 +43,16 @@ int RpcClient::call_RPC(uint16_t service_id, uint16_t opcode, const std::string&
     service_id_ = service_id;
     opcode_ = opcode;
 
-    RpcMessage rpc_message(service_id, opcode, playload);
-    log_debug("rpc_message: %s",  rpc_message.dump().c_str());
-    send_rpc_message(rpc_message);
+    RpcRequestMessage rpc_request_message(service_id, opcode, playload);
+    log_debug("rpc_request_message: %s",  rpc_request_message.dump().c_str());
+    send_rpc_message(rpc_request_message);
 
     // 接收报文
-    RpcMessage r_rpc_message;
-    recv_rpc_message(r_rpc_message);
+    RpcResponseMessage rpc_response_message;
+    recv_rpc_message(rpc_response_message);
 
 
-    respload = r_rpc_message.playload_;
+    respload = rpc_response_message.payload_;
 
     return 0;
 }

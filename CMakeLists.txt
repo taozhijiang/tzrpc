@@ -67,7 +67,7 @@ add_executable( pbi_bankpay_lookup_service main.cpp build_version.cpp ${DIR_SRCS
 
 # ld iconv ?
 
-set (EXTRA_LIBS Scaffold RPC Network Protocol Utils )
+set (EXTRA_LIBS Scaffold Protocol RPC Network Utils )
 
 set (EXTRA_LIBS ${EXTRA_LIBS} ssl config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)

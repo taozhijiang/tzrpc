@@ -33,7 +33,7 @@ public:
 
         std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
         append_internal(header_str);
-        append_internal(msg.playload_);
+        append_internal(msg.payload_);
     }
 
     // used internally, user should prefer Message
@@ -49,7 +49,7 @@ public:
 
         std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
         append_internal(header_str);
-        append_internal(msg.playload_);
+        append_internal(msg.payload_);
         return static_cast<uint32_t>(data_.size());
     }
 

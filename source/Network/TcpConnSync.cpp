@@ -67,7 +67,7 @@ int TcpConnSync::parse_msg_body(Message& msg) {
     recv_bound_.buffer_.retrive(msg_str, recv_bound_.header_.length);
 
     msg.header_ = recv_bound_.header_;
-    msg.playload_ = msg_str;
+    msg.payload_ = msg_str;
 
     return 0;
 }

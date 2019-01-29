@@ -29,6 +29,11 @@ message XtraReadOps {
         }
         optional Get get = 3;
 
+        message Ping {
+            required string msg = 1;
+        }
+        optional Ping ping = 4;
+
     }
 
     // 所有响应报文
@@ -41,6 +46,11 @@ message XtraReadOps {
             required string value = 1;
         }
         optional Get get = 3;
+
+        message Ping {
+            required string msg = 1;
+        }
+        optional Ping ping = 4;
 
     }
 }

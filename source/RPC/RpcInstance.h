@@ -6,7 +6,9 @@
 
 #include <Core/Buffer.h>
 #include <Network/TcpConnAsync.h>
-#include <RPC/RpcMessage.h>
+
+#include <RPC/RpcRequestMessage.h>
+#include <RPC/RpcResponseMessage.h>
 
 namespace tzrpc {
 
@@ -16,46 +18,21 @@ public:
         start_(::time(NULL)),
         full_socket_(socket),
         request_(str_request),
-        rpc_message_(),
+        rpc_request_message_(),
         response_(),
+        rpc_response_message_(),
         service_id_(-1),
         opcode_(-1) {
     }
 
-    bool validate_request() {
+    bool validate_request();
 
-        if (request_.get_length() < sizeof(RpcHeader)) {
-            return false;
-        }
+    bool reply_rpc_message(const std::string& msg);
+    // 返回系统性的错误
+    void reject(RpcResponseStatus status);
+    // 返回业务相关的错误
+    void return_biz_error();
 
-        // 解析头部
-        std::string head_str;
-        RpcHeader header;
-        request_.retrive(head_str, sizeof(RpcHeader));
-        ::memcpy(reinterpret_cast<char*>(&header), head_str.c_str(), sizeof(RpcHeader));
-        header.from_net_endian();
-
-        if (header.magic != kRpcHeaderMagic ||
-            header.version != kRpcHeaderVersion ) {
-            return false;
-        }
-
-        service_id_ = header.service_id;
-        opcode_ = header.opcode;
-
-        std::string msg_str;
-        request_.retrive(msg_str, setting.max_msg_size_ - sizeof(RpcHeader));
-        if (msg_str.empty()) {
-            return false;
-        }
-
-        rpc_message_.header_ = header;
-        rpc_message_.playload_ = msg_str;
-
-        log_debug("validate/parse rpc_instance: %s", rpc_message_.dump().c_str());
-
-        return true;
-    }
 
     uint16_t get_service_id() {
         return service_id_;
@@ -65,23 +42,8 @@ public:
         return opcode_;
     }
 
-    RpcMessage& get_rpc_message() {
-        return rpc_message_;
-    }
-
-    bool reply_rpc_message(const std::string& msg) {
-
-        RpcMessage rpc_message(service_id_, opcode_,  msg);
-        Message net_msg(rpc_message.net_str());
-
-        auto sock = full_socket_.lock();
-        if (!sock) {
-            log_err("socket already release before.");
-            return false;
-        }
-
-        sock->async_send_message(net_msg);
-        return true;
+    RpcRequestMessage& get_rpc_request_message() {
+        return rpc_request_message_;
     }
 
 private:
@@ -89,9 +51,10 @@ private:
     std::weak_ptr<TcpConnAsync> full_socket_; // 可能socket提前在网络层已经释放了
 
     Buffer request_;
-    RpcMessage rpc_message_;
+    RpcRequestMessage rpc_request_message_;
 
     Buffer response_;
+    RpcResponseMessage rpc_response_message_;
 
 private:
     // these detail info were extract from request

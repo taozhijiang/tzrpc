@@ -1,7 +1,9 @@
 #ifndef __RPC_CLIENT_H__
 #define __RPC_CLIENT_H__
 
-#include <RPC/RpcMessage.h>
+#include <RPC/RpcRequestMessage.h>
+#include <RPC/RpcResponseMessage.h>
+
 #include <Network/TcpConnSync.h>
 
 namespace tzrpc {
@@ -17,8 +19,8 @@ public:
         opcode_(-1) {
     }
 
-    bool send_rpc_message(const RpcMessage& rpc_message);
-    bool recv_rpc_message(RpcMessage& rpc_message);
+    bool send_rpc_message(const RpcRequestMessage& rpc_request_message);
+    bool recv_rpc_message(RpcResponseMessage& rpc_response_message);
 
     int call_RPC(uint16_t service_id, uint16_t opcode, const std::string& playload, std::string& respload);
 

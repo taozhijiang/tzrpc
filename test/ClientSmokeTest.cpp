@@ -29,7 +29,7 @@ TEST(ClientSmokeTest, ClientConnTest) {
 
     struct tzrpc::Message msg {};
     msg.header_ = header;
-    msg.playload_ = msg_str;
+    msg.payload_ = msg_str;
 
 
     // TCP client

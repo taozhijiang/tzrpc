@@ -48,7 +48,7 @@ void XtraTaskService::read_impl(std::shared_ptr<RpcInstance> rpc_instance) {
     rpc.reply(response);
     #endif
 
-    const RpcMessage& msg = rpc_instance->get_rpc_message();
+    const RpcRequestMessage& msg = rpc_instance->get_rpc_request_message();
     log_debug(" read ops recv: %s", msg.dump().c_str());
 
     rpc_instance->reply_rpc_message("nicol_read_reply");
@@ -63,7 +63,7 @@ void XtraTaskService::write_impl(std::shared_ptr<RpcInstance> rpc_instance) {
     rpc.reply(response);
     #endif
 
-    const RpcMessage& msg = rpc_instance->get_rpc_message();
+    const RpcRequestMessage& msg = rpc_instance->get_rpc_request_message();
     log_debug(" write ops recv: %s", msg.dump().c_str());
 
     rpc_instance->reply_rpc_message("nicol_write_reply");

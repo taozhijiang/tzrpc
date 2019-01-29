@@ -19,6 +19,9 @@ struct Header {
     uint16_t version;       // "1"
     uint32_t length;        // playload length ( NOT include header)
 
+    uint32_t rev1;          // 当前保留空间，后续升级使用
+    uint32_t rev2;
+
     std::string dump() const {
         char msg[64] {};
         snprintf(msg, sizeof(msg), "mgc:%0x, ver:%0x, len:%u",
@@ -45,16 +48,16 @@ struct Header {
 struct Message {
 
     Header header_;
-    std::string playload_;
+    std::string payload_;
 
     Message():
         header_({}),
-        playload_({}) {
+        payload_({}) {
     }
 
     explicit Message(const std::string& data):
         header_({}),
-        playload_(data) {
+        payload_(data) {
         header_.magic = kHeaderMagic;
         header_.version = kHeaderVersion;
         header_.length = data.size();
@@ -62,7 +65,7 @@ struct Message {
 
     std::string dump() const {
         std::string ret = "header: " + header_.dump();
-        ret += ", msg_len: " + convert_to_string(playload_.size());
+        ret += ", msg_len: " + convert_to_string(payload_.size());
         ret += "]]]";
 
         return ret;
@@ -73,7 +76,7 @@ struct Message {
         header.to_net_endian();
         std::string header_str(reinterpret_cast<char*>(&header), sizeof(Header));
 
-        return header_str + playload_;
+        return header_str + payload_;
     }
 
 };
