@@ -120,15 +120,16 @@ protected:
 
 
 
+const static uint32_t kFixedIoBufferSize = 2048;
+
 struct IOBound {
     IOBound():
         io_block_({}),
         header_({}),
         buffer_() {
-        io_block_.resize(8*1024);
     }
 
-    std::vector<char> io_block_;    // 读写操作的固定缓存
+    char io_block_[kFixedIoBufferSize];    // 读写操作的固定缓存
     Header header_;                 // 如果 > sizeof(Header), head转换成host order
     Buffer buffer_;                 // 已经传输字节
 };

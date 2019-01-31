@@ -43,16 +43,17 @@ void TcpConnAsync::stop() {
 
 int TcpConnAsync::parse_header() {
 
-    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= sizeof(Header));
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
         log_err("we expect at least header read: %d, but get %d",
                 static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
 
+    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= sizeof(Header));
+
     // 解析头部
     std::string head_str;
-    recv_bound_.buffer_.retrive(head_str, sizeof(Header));
+    recv_bound_.buffer_.consume(head_str, sizeof(Header));
     ::memcpy(reinterpret_cast<char*>(&recv_bound_.header_), head_str.c_str(), sizeof(Header));
 
     recv_bound_.header_.from_net_endian();
@@ -85,7 +86,7 @@ void TcpConnAsync::do_read() override {
     uint32_t bytes_read = recv_bound_.buffer_.get_length();
     if (bytes_read < sizeof(Header)) {
         set_ops_cancel_timeout();
-        async_read(*socket_, buffer(recv_bound_.io_block_.data(), recv_bound_.io_block_.size()),
+        async_read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
                    boost::asio::transfer_at_least(sizeof(Header) - bytes_read),
                                  strand_->wrap(
                                      std::bind(&TcpConnAsync::read_handler,
@@ -117,8 +118,13 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
 
     SAFE_ASSERT(bytes_transferred > 0);
 
-    std::string str(recv_bound_.io_block_.begin(), recv_bound_.io_block_.begin() + bytes_transferred);
+    std::string str(recv_bound_.io_block_, bytes_transferred);
     recv_bound_.buffer_.append_internal(str);
+
+    if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
+        log_notice("unexpect read again!");
+        return do_read();
+    }
 
     SAFE_ASSERT(recv_bound_.buffer_.get_length() >= sizeof(Header));
 
@@ -137,6 +143,7 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
 int TcpConnAsync::parse_msg_body(Message& msg) {
 
     SAFE_ASSERT(recv_bound_.buffer_.get_length() >= recv_bound_.header_.length);
+
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
         log_err("we expect at least message read: %d, but get %d",
                 static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
@@ -144,7 +151,7 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
     }
 
     std::string msg_str;
-    recv_bound_.buffer_.retrive(msg_str, recv_bound_.header_.length);
+    recv_bound_.buffer_.consume(msg_str, recv_bound_.header_.length);
 
     msg.header_ = recv_bound_.header_;
     msg.payload_ = msg_str;
@@ -168,9 +175,9 @@ void TcpConnAsync::do_read_msg() {
 
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
         uint32_t to_read = std::min((uint32_t)(recv_bound_.header_.length - recv_bound_.buffer_.get_length()),
-                                    (uint32_t)(recv_bound_.io_block_.size()));
+                                    (uint32_t)(kFixedIoBufferSize));
         set_ops_cancel_timeout();
-        async_read(*socket_, buffer(recv_bound_.io_block_.data(), recv_bound_.io_block_.size()),
+        async_read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
                        boost::asio::transfer_at_least(to_read),
                                      strand_->wrap(
                                          std::bind(&TcpConnAsync::read_msg_handler,
@@ -189,12 +196,17 @@ void TcpConnAsync::do_read_msg() {
             Dispatcher::instance().handle_RPC(instance);
 
             return do_read(); // read again for future
+
         } else if(ret > 0) {
+
             return do_read_msg();
+
         } else {
+
             log_err("read_msg error found, shutdown connection...");
             sock_shutdown_and_close(ShutdownType::kBoth);
             return;
+
         }
     }
 }
@@ -211,7 +223,7 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
 
     SAFE_ASSERT(bytes_transferred > 0);
 
-    std::string str(recv_bound_.io_block_.begin(), recv_bound_.io_block_.begin() + bytes_transferred);
+    std::string str(recv_bound_.io_block_, bytes_transferred);
     recv_bound_.buffer_.append_internal(str);
 
     Message msg;
@@ -225,12 +237,17 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
         Dispatcher::instance().handle_RPC(instance);
 
         return do_read();
+
     } else if(ret > 0) {
+
         return do_read_msg();
+
     } else {
+
         log_err("read_msg_handler error found, shutdown connection...");
         sock_shutdown_and_close(ShutdownType::kBoth);
         return;
+
     }
 }
 
@@ -254,13 +271,13 @@ void TcpConnAsync::do_write() override {
     }
 
     uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
-                                 (uint32_t)(send_bound_.io_block_.size()));
+                                 (uint32_t)(kFixedIoBufferSize));
 
-    send_bound_.buffer_.retrive(send_bound_.io_block_, to_write);
+    send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
 
     set_ops_cancel_timeout();
-    async_write(*socket_, buffer(send_bound_.io_block_.data(), to_write),
-                    boost::asio::transfer_at_least(to_write),
+    async_write(*socket_, buffer(send_bound_.io_block_, to_write),
+                    boost::asio::transfer_exactly(to_write),
                               strand_->wrap(
                                  std::bind(&TcpConnAsync::write_handler,
                                      shared_from_this(),
@@ -280,10 +297,10 @@ void TcpConnAsync::write_handler(const boost::system::error_code& ec, size_t byt
     }
 
     // transfer_at_least 应该可以保证将需要的数据传输完，除非错误发生了
-    // TODO 后续保证优化
     SAFE_ASSERT(bytes_transferred > 0);
 
     // 再次触发写，如果为空就直接返回
+    // 函数中会检查，如果内容为空，就直接返回不执行写操作
     do_write();
 }
 
@@ -325,11 +342,6 @@ bool TcpConnAsync::handle_socket_ec(const boost::system::error_code& ec ) {
     return close_socket;
 }
 
-// while:; do echo -e "GET / HTTP/1.1\nhost: test.domain\n\n"; sleep 3; done | telnet 127.0.0.1 8899
-bool TcpConnAsync::keep_continue() {
-    return false;
-}
-
 void TcpConnAsync::set_ops_cancel_timeout() {
 
     std::lock_guard<std::mutex> lock(ops_cancel_mutex_);
@@ -344,7 +356,7 @@ void TcpConnAsync::set_ops_cancel_timeout() {
     SAFE_ASSERT(setting.ops_cancel_time_out_ );
     ops_cancel_timer_->async_wait(std::bind(&TcpConnAsync::ops_cancel_timeout_call, shared_from_this(),
                                            std::placeholders::_1));
-    log_debug("register ops_cancel_time_out %d sec", setting.ops_cancel_time_out_);
+    return;
 }
 
 void TcpConnAsync::revoke_ops_cancel_timeout() {
@@ -370,7 +382,6 @@ void TcpConnAsync::ops_cancel_timeout_call(const boost::system::error_code& ec) 
         log_err("unknown and won't handle error_code: {%d} %s", ec.value(), ec.message().c_str());
     }
 }
-
 
 
 } // end tzrpc

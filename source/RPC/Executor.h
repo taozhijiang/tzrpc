@@ -32,7 +32,7 @@ public:
     bool init() {
 
         if (!executor_threads_.init_threads(
-            std::bind(&Executor::executor_service_run, this, std::placeholders::_1), 5)) {
+            std::bind(&Executor::executor_service_run, this, std::placeholders::_1), 15)) {
             log_err("executor_service_run init task failed!");
             return false;
         }

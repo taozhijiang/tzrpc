@@ -21,25 +21,34 @@ message XtraReadOps {
         }
         optional Get gets       = 4;
 
+        // 将发送的报文返回的服务
+        message Echo {
+            required string msg = 1;
+        }
+        optional Echo echo      = 5;
 
     }
 
     // 所有响应报文
     message Response {
 
-        optional int32  code = 1;
-        optional string msg  = 2;
+        optional int32  code    = 1;
+        optional string msg     = 2;
 
         message Ping {
             required string msg = 1;
         }
-        optional Ping ping  = 3;
+        optional Ping ping      = 3;
 
         message Get {
             required string value = 1;
         }
-        optional Get gets    = 4;
+        optional Get gets       = 4;
 
+        message Echo {
+            required string msg = 1;
+        }
+        optional Echo echo      = 5;
 
     }
 }

@@ -9,8 +9,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wpointer-arith -Ww
 # if what to see debug in verbose mode
 # cmake -DCMAKE_VERBOSE_MAKEFILE=true ../
 
-#set(CMAKE_BUILD_TYPE DEBUG)
-set(CMAKE_BUILD_TYPE RELEASE)
+set(CMAKE_BUILD_TYPE DEBUG)
+#set(CMAKE_BUILD_TYPE RELEASE)
 set(CMAKE_CXX_FLAGS_DEBUG   "$ENV{CXXFLAGS} -O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 ")
 
@@ -26,7 +26,7 @@ ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 
 # mysqlcppconn如果使用C开发会在释放的时候段错误
-set (XTRA_RHEL6x /home/nicol/workDir/Incubator/xtra_rhel6.x)
+set (XTRA_RHEL6x /home/nicol/workDir/svnclient/xtra_rhel6.x)
 set (PROTOBUF_GEN_CMD "cp -fr ${XTRA_RHEL6x}/bin/protoc-2.5.0 ${PROJECT_SOURCE_DIR}/bin/protoc && chmod a+x ${PROJECT_SOURCE_DIR}/bin/protoc && cd ${CMAKE_CURRENT_SOURCE_DIR}/source/Protocol/source && rm -fr ../gen-cpp && mkdir -p ../gen-cpp && make ")
 exec_program(${PROTOBUF_GEN_CMD})
 
@@ -63,7 +63,7 @@ exec_program( "export BUILD_VAR=`git log -1 --pretty=%cd` && echo 'const char *b
 exec_program( "export BUILD_VAR=`git log -1 --pretty=\"%an %ae\"` && echo 'const char *build_commit_author = \"VCS: Author:' $BUILD_VAR '\";' >> build_version.cpp ")
 exec_program( "export BUILD_VAR=`date` && echo 'const char *build_time = \"Build At:' $BUILD_VAR '\";' >> build_version.cpp ")
 
-add_executable( pbi_bankpay_lookup_service main.cpp build_version.cpp ${DIR_SRCS} )
+add_executable( tzrpc main.cpp build_version.cpp ${DIR_SRCS} )
 
 # ld iconv ?
 
@@ -77,9 +77,10 @@ set (EXTRA_LIBS ${EXTRA_LIBS} protoc protobuf )
 
 
 # 某些库需要静态全连接，否则主服务没使用但是so使用，会报符号没有找到
-target_link_libraries( pbi_bankpay_lookup_service -lrt -rdynamic -ldl
+target_link_libraries( tzrpc -lrt -rdynamic -ldl
     -Wl,--whole-archive ${WHOLE_LIBS} -Wl,--no-whole-archive
     ${EXTRA_LIBS}
 )
 
 add_subdirectory( test )
+add_subdirectory( benchmark )

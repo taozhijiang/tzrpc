@@ -47,6 +47,8 @@ RpcClientStatus RpcClient::call_RPC(uint16_t service_id, uint16_t opcode,
         log_debug("create new socket %s:%u ok.",  addr_ip_.c_str(), addr_port_);
     }
 
+    start_ = ::time(NULL);
+
     // 构建请求包
     RpcRequestMessage rpc_request_message(service_id, opcode, payload);
     log_debug("rpc_request_message: %s",  rpc_request_message.dump().c_str());

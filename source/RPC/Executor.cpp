@@ -31,6 +31,8 @@ void Executor::executor_service_run(ThreadObjPtr ptr) {
 
         // execute RPC handler
         service_impl_->handle_RPC(rpc_instance);
+
+//        log_notice("Queue Size: %u", rpc_queue_.SIZE());
     }
 
     ptr->status_ = ThreadStatus::kDead;

@@ -61,6 +61,10 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
             log_debug("XtraTask::XtraReadOps::get -> %s", request.gets().key().c_str());
             response.mutable_gets()->set_value("[[[pong]]]");
             break;
+        } else if (request.has_echo()) {
+            std::string real_msg = request.echo().msg();
+            log_debug("XtraTask::XtraReadOps::echo -> %s", real_msg.c_str());
+            response.mutable_echo()->set_msg("echo:" + real_msg);
         } else {
             log_err("undetected specified service call.");
             rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);

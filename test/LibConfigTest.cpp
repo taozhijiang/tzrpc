@@ -9,7 +9,7 @@ using namespace tzrpc;
 
 TEST(LibConfigTest, SysConfigInitVefifyTest) {
 
-    std::string cfgFile = "pbi_bankpay_lookup_service.conf";
+    std::string cfgFile = "tzrpc.conf";
     bool b_ret = sys_config_init(cfgFile);
     ASSERT_TRUE(b_ret);
 

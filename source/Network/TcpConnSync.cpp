@@ -28,17 +28,17 @@ TcpConnSync::~TcpConnSync() {
 
 int TcpConnSync::parse_header() {
 
-    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= sizeof(Header));
-
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
         log_err("we expect at least header read: %d, but get %d",
                 static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
 
+    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= sizeof(Header));
+
     // 解析头部
     std::string head_str;
-    recv_bound_.buffer_.retrive(head_str, sizeof(Header));
+    recv_bound_.buffer_.consume(head_str, sizeof(Header));
     ::memcpy(reinterpret_cast<char*>(&recv_bound_.header_), head_str.c_str(), sizeof(Header));
 
     recv_bound_.header_.from_net_endian();
@@ -47,6 +47,7 @@ int TcpConnSync::parse_header() {
         recv_bound_.header_.version != kHeaderVersion ||
         recv_bound_.header_.length > setting.max_msg_size_) {
         log_err("message header check error!");
+        log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
         return -1;
     }
 
@@ -64,7 +65,7 @@ int TcpConnSync::parse_msg_body(Message& msg) {
     }
 
     std::string msg_str;
-    recv_bound_.buffer_.retrive(msg_str, recv_bound_.header_.length);
+    recv_bound_.buffer_.consume(msg_str, recv_bound_.header_.length);
 
     msg.header_ = recv_bound_.header_;
     msg.payload_ = msg_str;
@@ -88,9 +89,10 @@ bool TcpConnSync::do_read(Message& msg) override {
 
         uint32_t bytes_read = recv_bound_.buffer_.get_length();
         boost::system::error_code ec;
-        size_t bytes_transferred = boost::asio::read(*socket_, buffer(recv_bound_.io_block_.data(), recv_bound_.io_block_.size()),
-                                                    boost::asio::transfer_at_least(sizeof(Header) - bytes_read),
-                                                    ec );
+        size_t bytes_transferred
+                = boost::asio::read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
+                                    boost::asio::transfer_at_least(sizeof(Header) - bytes_read),
+                                    ec );
 
         revoke_ops_cancel_timeout();
 
@@ -99,7 +101,7 @@ bool TcpConnSync::do_read(Message& msg) override {
             return false;
         }
 
-        std::string str(recv_bound_.io_block_.begin(), recv_bound_.io_block_.begin() + bytes_transferred);
+        std::string str(recv_bound_.io_block_, bytes_transferred);
         recv_bound_.buffer_.append_internal(str);
 
     }
@@ -126,12 +128,13 @@ bool TcpConnSync::do_read_msg(Message& msg) {
 
         set_ops_cancel_timeout();
         uint32_t to_read = std::min((uint32_t)(recv_bound_.header_.length - recv_bound_.buffer_.get_length()),
-                                    (uint32_t)(recv_bound_.io_block_.size()));
+                                    (uint32_t)(kFixedIoBufferSize));
 
         boost::system::error_code ec;
-        size_t bytes_transferred = boost::asio::read(*socket_, buffer(recv_bound_.io_block_.data(), recv_bound_.io_block_.size()),
-                                                     boost::asio::transfer_at_least(to_read),
-                                                     ec);
+        size_t bytes_transferred
+                = boost::asio::read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
+                                    boost::asio::transfer_at_least(to_read),
+                                    ec);
 
         revoke_ops_cancel_timeout();
 
@@ -140,7 +143,7 @@ bool TcpConnSync::do_read_msg(Message& msg) {
             return false;
         }
 
-        std::string str(recv_bound_.io_block_.begin(), recv_bound_.io_block_.begin() + bytes_transferred);
+        std::string str(recv_bound_.io_block_, bytes_transferred);
         recv_bound_.buffer_.append_internal(str);
     }
 
@@ -169,16 +172,18 @@ bool TcpConnSync::do_write() override {
 
     // 循环发送缓冲区中的数据
     while (send_bound_.buffer_.get_length() > 0) {
-        uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
-                                     (uint32_t)(send_bound_.io_block_.size()));
 
-        send_bound_.buffer_.retrive(send_bound_.io_block_, to_write);
+        uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
+                                     (uint32_t)(kFixedIoBufferSize));
+
+        send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
         set_ops_cancel_timeout();
 
         boost::system::error_code ec;
-        size_t bytes_transferred = boost::asio::write(*socket_, buffer(send_bound_.io_block_.data(), to_write),
-                                                      boost::asio::transfer_at_least(to_write),
-                                                      ec);
+        size_t bytes_transferred
+                = boost::asio::write(*socket_, buffer(send_bound_.io_block_, to_write),
+                                     boost::asio::transfer_exactly(to_write),
+                                     ec);
         revoke_ops_cancel_timeout();
 
         if (ec) {
@@ -186,9 +191,8 @@ bool TcpConnSync::do_write() override {
             return false;
         }
 
-        // TODO
         // 传输返回值的检测和处理
-
+        SAFE_ASSERT(bytes_transferred == to_write );
     }
 
     return true;
@@ -246,7 +250,7 @@ void TcpConnSync::set_ops_cancel_timeout() {
     SAFE_ASSERT(setting.client_ops_cancel_time_out_ );
     ops_cancel_timer_->async_wait(std::bind(&TcpConnSync::ops_cancel_timeout_call, shared_from_this(),
                                             std::placeholders::_1));
-    log_debug("register ops_cancel_time_out %d sec", setting.client_ops_cancel_time_out_);
+    //log_debug("register ops_cancel_time_out %d sec", setting.client_ops_cancel_time_out_);
 }
 
 void TcpConnSync::revoke_ops_cancel_timeout() {

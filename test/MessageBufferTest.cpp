@@ -41,12 +41,12 @@ TEST(MessageBufferTest, BufferTest) {
     ASSERT_THAT(buff.get_length(), Eq(str1.size() + str2.size()));
 
     std::string store1;
-    ASSERT_FALSE(buff.retrive(store1, 0));
-    ASSERT_TRUE(buff.retrive(store1, 5));
+    ASSERT_FALSE(buff.consume(store1, 0));
+    ASSERT_TRUE(buff.consume(store1, 5));
     ASSERT_THAT(store1, Eq(str1));
     ASSERT_THAT(buff.get_length(), str2.size());
 
-    ASSERT_TRUE(buff.retrive(store1, 100));
+    ASSERT_TRUE(buff.consume(store1, 100));
     ASSERT_THAT(store1, Eq(str2));
     ASSERT_THAT(buff.get_length(), 0);
 }

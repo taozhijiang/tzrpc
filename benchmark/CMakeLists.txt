@@ -2,7 +2,13 @@ cmake_minimum_required (VERSION 2.8.11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x " )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wpointer-arith -Wwrite-strings -Werror=format -march=native " )
 
-set (XTRA_RHEL6x /home/nicol/workDir/svnclient/xtra_rhel6.x)
+set(CMAKE_BUILD_TYPE DEBUG)
+#set(CMAKE_BUILD_TYPE RELEASE)
+set(CMAKE_CXX_FLAGS_DEBUG   "$ENV{CXXFLAGS} -O0 -g")
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 ")
+
+
+set (XTRA_RHEL6x /home/nicol/svnclient/Incubator/xtra_rhel6.x)
 set (INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/include/
         ${PROJECT_SOURCE_DIR}/source/
@@ -18,8 +24,8 @@ link_directories( /usr/lib64/mysql/
         ../lib
 )
 
-aux_source_directory( ./ UNIT_TEST_SRCS )
-add_executable( test ${UNIT_TEST_SRCS} )
+add_executable( perf_case_a perf_case_a.cpp)
+add_executable( perf_case_b perf_case_b.cpp)
 
 set (EXTRA_LIBS Scaffold Protocol RPC Network Utils )
 
@@ -29,8 +35,6 @@ set (EXTRA_LIBS ${EXTRA_LIBS} boost_system boost_thread boost_date_time boost_re
 set (EXTRA_LIBS ${EXTRA_LIBS} protoc protobuf )
 
 
-set (EXTRA_LIBS ${EXTRA_LIBS} gtest gmock)
-target_link_libraries( test -lrt -rdynamic -ldl
-    ${EXTRA_LIBS}
-)
+target_link_libraries( perf_case_a -lrt -rdynamic -ldl ${EXTRA_LIBS} )
+target_link_libraries( perf_case_b -lrt -rdynamic -ldl ${EXTRA_LIBS} )
 

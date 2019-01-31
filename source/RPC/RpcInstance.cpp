@@ -12,7 +12,7 @@ bool RpcInstance::validate_request() {
     // 解析头部
     std::string head_str;
     RpcRequestHeader header;
-    request_.retrive(head_str, sizeof(RpcRequestHeader));
+    request_.consume(head_str, sizeof(RpcRequestHeader));
     ::memcpy(reinterpret_cast<char*>(&header), head_str.c_str(), sizeof(RpcRequestHeader));
     header.from_net_endian();
 
@@ -25,7 +25,7 @@ bool RpcInstance::validate_request() {
     opcode_ = header.opcode;
 
     std::string msg_str;
-    request_.retrive(msg_str, setting.max_msg_size_ - sizeof(RpcRequestHeader));
+    request_.consume(msg_str, setting.max_msg_size_ - sizeof(RpcRequestHeader));
     if (msg_str.empty()) {
         return false;
     }
@@ -41,7 +41,7 @@ bool RpcInstance::validate_request() {
 
 void RpcInstance::reply_rpc_message(const std::string& msg) {
 
-    RpcResponseMessage rpc_response_message(service_id_, opcode_,  msg);
+    RpcResponseMessage rpc_response_message(service_id_, opcode_, msg);
     Message net_msg(rpc_response_message.net_str());
 
     auto sock = full_socket_.lock();

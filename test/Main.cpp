@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
         ::exit(1);
     }
 
-    const std::string cfgFile = "pbi_bankpay_lookup_service.conf";
+    const std::string cfgFile = "tzrpc.conf";
     if (!sys_config_init(cfgFile)) {
         std::cout << "handle system configure " << cfgFile <<" failed!" << std::endl;
         return -1;
