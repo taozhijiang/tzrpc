@@ -12,6 +12,19 @@ namespace tzrpc {
 static boost::asio::io_service IO_SERVICE;
 
 
+RpcClient::~RpcClient() {
+    log_debug("RpcClient Released ...");
+
+    // 客户端必须主动触发这个socket的io取消
+    // 和关闭操作，否则因为shared_from_this()导致客户端析钩之后
+    // 对应的socket还没有释放，从而体现的状况就是在客户端和服务端
+    // 之间建立了大量的socket连接
+    if (conn_) {
+        conn_->shutdown_socket();
+    }
+}
+
+
 bool RpcClient::send_rpc_message(const RpcRequestMessage& rpc_request_message) {
     Message net_msg(rpc_request_message.net_str());
     return conn_->send_net_message(net_msg);

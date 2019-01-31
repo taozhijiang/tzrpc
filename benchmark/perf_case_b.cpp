@@ -59,37 +59,37 @@ void* perf_run(void* x_void_ptr) {
         request.mutable_echo()->set_msg(echo_str);
         if(!ProtoBuf::marshalling_to_string(request, &mar_str)) {
             std::cerr << "marshalling message failed." << std::endl;
-            ::sleep(1);
-            ::abort();
+            stop = true;
+            continue;
         }
 
         std::string resp_str;
         auto status = client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, mar_str, resp_str);
         if(status != RpcClientStatus::OK) {
             std::cerr << "call failed, return code [" << static_cast<uint8_t>(status) << "]" << std::endl;
-            ::sleep(1);
-            ::abort();
+            stop = true;
+            continue;
         }
 
         XtraTask::XtraReadOps::Response response;
         if(!ProtoBuf::unmarshalling_from_string(resp_str, &response)) {
             std::cerr << "unmarshalling message failed." << std::endl;
-            ::sleep(1);
-            ::abort();
+            stop = true;
+            continue;
         }
 
         if(!response.has_code() || response.code() != 0 ) {
             std::cerr << "response code check error" << std::endl;
-            ::sleep(1);
-            ::abort();
+            stop = true;
+            continue;
         }
 
         std::string echo_expect = "echo:" + echo_str;
         std::string echo_back_str = response.echo().msg();
         if (echo_expect != echo_back_str) {
             std::cerr << "content check failed, expect: " << echo_expect << ", but recv: " << echo_back_str << std::endl;
-            ::sleep(1);
-            ::abort();
+            stop = true;
+            continue;
         }
 
         // increment success case

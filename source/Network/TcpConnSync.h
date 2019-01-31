@@ -26,6 +26,11 @@ public:
         return do_write();
     }
 
+    void shutdown_socket() {
+        ops_cancel();
+        sock_close();
+    }
+
 private:
 
     virtual bool do_read(Message& msg);

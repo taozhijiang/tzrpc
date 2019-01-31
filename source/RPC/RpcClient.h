@@ -22,6 +22,8 @@ public:
         addr_port_(addr_port) {
     }
 
+    ~RpcClient();
+
     RpcClientStatus call_RPC(uint16_t service_id, uint16_t opcode,
                              const std::string& payload, std::string& respload);
 
