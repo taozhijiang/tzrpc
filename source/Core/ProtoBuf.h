@@ -104,9 +104,6 @@ public:
         google::protobuf::LogSilencer _;
 
         if (!protoBuf->ParseFromString(str)) {
-            log_err("Missing fields in protocol buffer of type %s: %s",
-                    protoBuf->GetTypeName().c_str(),
-                    protoBuf->InitializationErrorString().c_str());
             return false;
         }
 
@@ -118,10 +115,6 @@ public:
         google::protobuf::LogSilencer _;
 
         if (!from.IsInitialized()) {
-            log_err("Missing fields in protocol buffer of type %s: %s (have %s)",
-                    from.GetTypeName().c_str(),
-                    from.InitializationErrorString().c_str(),
-                    dump(from).c_str());
             return false;
         }
 

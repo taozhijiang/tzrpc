@@ -4,19 +4,22 @@
 #include <gmock/gmock.h>
 using namespace ::testing;
 
+#include <Utils/Log.h>
+
 #include <Core/Message.h>
 #include <Core/Buffer.h>
 #include <Scaffold/Setting.h>
 
 #include <Protocol/Common.h>
 
-#include <RPC/RpcClient.h>
+#include <Client/include/RpcClient.h>
 #include <Protocol/gen-cpp/XtraTask.pb.h>
 
 #include <xtra_asio.h>
 using namespace boost::asio;
 
 using namespace tzrpc;
+using namespace tzrpc_client;
 
 TEST(ClientSmokeTest, ClientConnTest) {
 

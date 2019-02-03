@@ -9,12 +9,11 @@ using namespace ::testing;
 
 #include <Protocol/Common.h>
 
-#include <RPC/RpcClient.h>
+#include <Client/include/RpcClient.h>
 #include <Protocol/gen-cpp/XtraTask.pb.h>
 
-using namespace boost::asio;
-
 using namespace tzrpc;
+using namespace tzrpc_client;
 
 TEST(XtraTaskRequestCheckTest, InvalidRequestTest) {
 

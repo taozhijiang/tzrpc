@@ -3,14 +3,21 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <Scaffold/Setting.h>
-#include <Network/TcpConnSync.h>
+#include "include/RpcClient.h"
+#include <Client/TcpConnSync.h>
 
-namespace tzrpc {
+#define log_info printf
+#define log_notice printf
+#define log_err printf
 
-TcpConnSync::TcpConnSync(std::shared_ptr<ip::tcp::socket> socket, boost::asio::io_service& io_service):
+namespace tzrpc_client {
+
+TcpConnSync::TcpConnSync(std::shared_ptr<ip::tcp::socket> socket,
+                         boost::asio::io_service& io_service,
+                         const RpcClientSetting& client_setting):
     NetConn(socket),
     io_service_(io_service),
+    client_setting_(client_setting),
     was_cancelled_(false),
     ops_cancel_mutex_(),
     ops_cancel_timer_() {
@@ -22,7 +29,6 @@ TcpConnSync::TcpConnSync(std::shared_ptr<ip::tcp::socket> socket, boost::asio::i
 }
 
 TcpConnSync::~TcpConnSync() {
-    log_debug("TcpConnSync SOCKET RELEASED!!!");
 }
 
 
@@ -45,7 +51,7 @@ int TcpConnSync::parse_header() {
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion ||
-        recv_bound_.header_.length > setting.max_msg_size_) {
+        recv_bound_.header_.length > client_setting_.max_msg_size_) {
         log_err("message header check error!");
         log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
         return -1;
@@ -75,8 +81,6 @@ int TcpConnSync::parse_msg_body(Message& msg) {
 
 
 bool TcpConnSync::do_read(Message& msg) override {
-
-    log_debug("read ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
         log_err("socket status error: %d", get_conn_stat());
@@ -117,8 +121,6 @@ bool TcpConnSync::do_read(Message& msg) override {
 
 bool TcpConnSync::do_read_msg(Message& msg) {
 
-    log_debug("read ... in thread %#lx", (long)pthread_self());
-
     if (get_conn_stat() != ConnStat::kWorking) {
         log_err("socket status error: %d", get_conn_stat());
         return false;
@@ -157,8 +159,6 @@ bool TcpConnSync::do_read_msg(Message& msg) {
 }
 
 bool TcpConnSync::do_write() override {
-
-    log_debug("write ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
         log_err("socket status error: %d", get_conn_stat());
@@ -240,17 +240,16 @@ void TcpConnSync::set_ops_cancel_timeout() {
 
     std::lock_guard<std::mutex> lock(ops_cancel_mutex_);
 
-    if (setting.client_ops_cancel_time_out_  == 0) {
+    if (client_setting_.client_ops_cancel_time_out_  == 0) {
         SAFE_ASSERT(!ops_cancel_timer_);
         return;
     }
 
     ops_cancel_timer_.reset( new boost::asio::deadline_timer (io_service_,
-                                      boost::posix_time::seconds(setting.client_ops_cancel_time_out_)) );
-    SAFE_ASSERT(setting.client_ops_cancel_time_out_ );
+                                      boost::posix_time::seconds(client_setting_.client_ops_cancel_time_out_)) );
+    SAFE_ASSERT(client_setting_.client_ops_cancel_time_out_ );
     ops_cancel_timer_->async_wait(std::bind(&TcpConnSync::ops_cancel_timeout_call, shared_from_this(),
                                             std::placeholders::_1));
-    //log_debug("register ops_cancel_time_out %d sec", setting.client_ops_cancel_time_out_);
 }
 
 void TcpConnSync::revoke_ops_cancel_timeout() {
@@ -267,16 +266,18 @@ void TcpConnSync::revoke_ops_cancel_timeout() {
 void TcpConnSync::ops_cancel_timeout_call(const boost::system::error_code& ec) {
 
     if (ec == 0){
-        log_info("client_ops_cancel_timeout_call called with timeout: %d", setting.client_ops_cancel_time_out_ );
+        log_info("client_ops_cancel_timeout_call called with timeout: %d",
+                 client_setting_.client_ops_cancel_time_out_ );
         ops_cancel();
         sock_shutdown_and_close(ShutdownType::kBoth);
     } else if ( ec == boost::asio::error::operation_aborted) {
         // normal cancel
     } else {
-        log_err("unknown and won't handle error_code: {%d} %s", ec.value(), ec.message().c_str());
+        log_err("unknown and won't handle error_code: {%d} %s",
+                ec.value(), ec.message().c_str());
     }
 }
 
 
 
-} // end tzrpc
+} // end tzrpc_client

@@ -43,8 +43,9 @@ bool Manager::init() {
         return false;
     }
 
+    // 注册具体的服务
     std::shared_ptr<Service> xtra_task_service = std::make_shared<XtraTaskService>("XtraTask");
-    Dispatcher::instance().register_service(ServiceID::XTRA_TASK_SERVICE, xtra_task_service);
+    Dispatcher::instance().register_service(ServiceID::XTRA_TASK_SERVICE, xtra_task_service, 3, 8);
 
     Dispatcher::instance().init();
 

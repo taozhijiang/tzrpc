@@ -16,8 +16,10 @@ class Executor: public Service {
 
 public:
 
-    explicit Executor(std::shared_ptr<Service> service_impl):
+    Executor(std::shared_ptr<Service> service_impl, uint32_t thread_num, uint32_t thread_num_boost):
         service_impl_(service_impl),
+        thread_num_(thread_num),
+        thread_num_boost_(thread_num_boost),
         rpc_queue_() {
     }
 
@@ -32,7 +34,7 @@ public:
     bool init() {
 
         if (!executor_threads_.init_threads(
-            std::bind(&Executor::executor_service_run, this, std::placeholders::_1), 15)) {
+            std::bind(&Executor::executor_service_run, this, std::placeholders::_1), thread_num_)) {
             log_err("executor_service_run init task failed!");
             return false;
         }
@@ -42,8 +44,12 @@ public:
 
 private:
     std::shared_ptr<Service> service_impl_;
-    EQueue<std::shared_ptr<RpcInstance>> rpc_queue_;
 
+    // 执行任务的线程组数目
+    uint32_t thread_num_;
+    uint32_t thread_num_boost_;
+
+    EQueue<std::shared_ptr<RpcInstance>> rpc_queue_;
 
 private:
     ThreadPool executor_threads_;

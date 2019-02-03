@@ -27,7 +27,7 @@ link_directories( /usr/lib64/mysql/
 add_executable( perf_case_a perf_case_a.cpp)
 add_executable( perf_case_b perf_case_b.cpp)
 
-set (EXTRA_LIBS Scaffold Protocol RPC Network Utils )
+set (EXTRA_LIBS Client )
 
 set (EXTRA_LIBS ${EXTRA_LIBS} ssl config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)

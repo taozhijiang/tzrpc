@@ -5,15 +5,13 @@
 #include <cstdlib>
 
 
-#include <Core/ProtoBuf.h>
-#include <Scaffold/Setting.h>
+#include <Client/include/RpcClient.h>
 
-#include <Protocol/Common.h>
+#include <Client/include/Common.h>
+#include <Client/include/ProtoBuf.h>
+#include <Client/include/XtraTask.pb.h>
 
-#include <RPC/RpcClient.h>
-#include <Protocol/gen-cpp/XtraTask.pb.h>
-
-using namespace tzrpc;
+using namespace tzrpc_client;
 
 //
 // 短连接的性能
@@ -24,6 +22,8 @@ volatile bool stop  = false;
 
 time_t            start_time = 0;
 volatile uint64_t count = 0;
+
+struct RpcClientSetting setting {};
 
 extern char * program_invocation_short_name;
 static void usage() {
@@ -51,27 +51,29 @@ void* perf_run(void* x_void_ptr) {
 
         std::string mar_str;
 
-        RpcClient client(setting.serv_ip_, setting.bind_port_);
+        RpcClient client(setting.addr_ip_, setting.addr_port_);
 
         std::string echo_str(generate_random_str());
-        XtraTask::XtraReadOps::Request request;
+        tzrpc::XtraTask::XtraReadOps::Request request;
         request.mutable_echo()->set_msg(echo_str);
-        if(!ProtoBuf::marshalling_to_string(request, &mar_str)) {
+        if(!tzrpc::ProtoBuf::marshalling_to_string(request, &mar_str)) {
             std::cerr << "marshalling message failed." << std::endl;
             stop = true;
             continue;
         }
 
         std::string resp_str;
-        auto status = client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, mar_str, resp_str);
+        auto status = client.call_RPC(tzrpc::ServiceID::XTRA_TASK_SERVICE,
+                                      tzrpc::XtraTask::OpCode::CMD_READ,
+                                      mar_str, resp_str);
         if(status != RpcClientStatus::OK) {
             std::cerr << "call failed, return code [" << static_cast<uint8_t>(status) << "]" << std::endl;
             stop = true;
             continue;
         }
 
-        XtraTask::XtraReadOps::Response response;
-        if(!ProtoBuf::unmarshalling_from_string(resp_str, &response)) {
+        tzrpc::XtraTask::XtraReadOps::Response response;
+        if(!tzrpc::ProtoBuf::unmarshalling_from_string(resp_str, &response)) {
             std::cerr << "unmarshalling message failed." << std::endl;
             stop = true;
             continue;
@@ -104,17 +106,9 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    const std::string cfgFile = "tzrpc.conf";
-    if (!sys_config_init(cfgFile)) {
-        std::cerr << "handle system configure " << cfgFile <<" failed!" << std::endl;
-        return -1;
-    }
+    setting.addr_ip_ = "127.0.0.1";
+    setting.addr_port_ = 8435;
 
-    set_checkpoint_log_store_func(syslog);
-    if (!log_init(tzrpc::setting.log_level_)) {
-        std::cerr << "init syslog failed!" << std::endl;
-        return -1;
-    }
 
     std::vector<pthread_t> tids( thread_num,  0);
     for(size_t i=0; i<tids.size(); ++i) {

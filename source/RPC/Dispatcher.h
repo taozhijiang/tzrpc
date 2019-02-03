@@ -39,14 +39,27 @@ public:
         return true;
     }
 
-    void register_service(uint16_t service_id, std::shared_ptr<Service> service) {
+    void register_service(uint16_t service_id, std::shared_ptr<Service> service,
+                          uint32_t thread_num ) {
+        return register_service(service_id, service, thread_num, thread_num);
+    }
+
+    void register_service(uint16_t service_id, std::shared_ptr<Service> service,
+                          uint32_t thread_num,
+                          uint32_t thread_num_boost ) {
 
         if (initialized_) {
             log_err("Dispatcher has already been initialized, does not support dynamic registerService");
             return;
         }
 
-        auto exec_service = std::make_shared<Executor>(service);
+        if (thread_num == 0 || thread_num > 100 ||
+            thread_num > thread_num_boost ||
+            thread_num_boost > 100 ) {
+            log_err("invalid thread_num provided: %u, %s", thread_num, thread_num_boost);
+            return;
+        }
+        auto exec_service = std::make_shared<Executor>(service, thread_num, thread_num_boost);
         if (!exec_service->init()) {
             log_err("service %s init failed.", service->instance_name().c_str());
             return;

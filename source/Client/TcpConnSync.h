@@ -4,9 +4,11 @@
 // 同步的TCP连接，主要用于客户端使用
 
 #include <Network/NetConn.h>
-#include <Utils/Log.h>
 
-namespace tzrpc {
+namespace tzrpc_client {
+
+class RpcClientSetting;
+using namespace tzrpc;
 
 class TcpConnSync: public NetConn, public boost::noncopyable,
                    public std::enable_shared_from_this<TcpConnSync> {
@@ -14,7 +16,9 @@ class TcpConnSync: public NetConn, public boost::noncopyable,
 public:
 
     /// Construct a connection with the given socket.
-    explicit TcpConnSync(std::shared_ptr<ip::tcp::socket> socket, boost::asio::io_service& io_service);
+    explicit TcpConnSync(std::shared_ptr<ip::tcp::socket> socket,
+                         boost::asio::io_service& io_service,
+                         const RpcClientSetting& client_setting);
     virtual ~TcpConnSync();
 
     bool recv_net_message(Message& msg) {
@@ -59,6 +63,7 @@ private:
 
 private:
 
+    const RpcClientSetting& client_setting_;
     boost::asio::io_service& io_service_;
 
     bool was_cancelled_;
@@ -76,7 +81,7 @@ private:
 };
 
 
-} // end tzrpc
+} // end tzrpc_client
 
 
 #endif // __NETWORK_TCP_CONN_SYNC_H__
