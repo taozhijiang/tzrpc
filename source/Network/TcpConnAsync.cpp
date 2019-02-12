@@ -351,11 +351,18 @@ void TcpConnAsync::set_ops_cancel_timeout() {
         return;
     }
 
-    ops_cancel_timer_.reset( new boost::asio::deadline_timer (server_.io_service_,
-                                      boost::posix_time::seconds(setting.ops_cancel_time_out_ )) );
+    // cancel the already timer first if any
+    boost::system::error_code ignore_ec;
+    if (ops_cancel_timer_) {
+        ops_cancel_timer_->cancel(ignore_ec);
+    } else {
+        ops_cancel_timer_.reset(new steady_timer(server_.io_service_));
+    }
+
     SAFE_ASSERT(setting.ops_cancel_time_out_ );
+    ops_cancel_timer_->expires_from_now(boost::chrono::seconds(setting.ops_cancel_time_out_));
     ops_cancel_timer_->async_wait(std::bind(&TcpConnAsync::ops_cancel_timeout_call, shared_from_this(),
-                                           std::placeholders::_1));
+                                            std::placeholders::_1));
     return;
 }
 

@@ -3,6 +3,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 #include <Utils/Log.h>
 #include <Utils/ThreadPool.h>
@@ -138,8 +139,7 @@ public:
         enum ThreadStatus old_status = it->second->status_;
         it->second->status_ = ThreadStatus::kTerminating;
         if (timed_seconds) {
-            const boost::system_time timeout = boost::get_system_time() + boost::posix_time::milliseconds(timed_seconds * 1000);
-            it->first->timed_join(timeout);
+            it->first->try_join_for(boost::chrono::seconds(timed_seconds));
         } else {
             it->first->join();
         }

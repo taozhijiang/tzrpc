@@ -69,7 +69,7 @@ private:
 
     bool was_cancelled_;
     std::mutex ops_cancel_mutex_;
-    std::unique_ptr<boost::asio::deadline_timer> ops_cancel_timer_;
+    std::unique_ptr<steady_timer> ops_cancel_timer_;
 
     // Of course, the handlers may still execute concurrently with other handlers that
     // were not dispatched through an boost::asio::strand, or were dispatched through
