@@ -22,7 +22,7 @@ TEST(LibConfigTest, SysConfigInitVefifyTest) {
     int         i_value;
 
     ConfUtil::conf_value(*conf_ptr, "version", s_value);
-    ASSERT_THAT(s_value, Eq("1.0.0"));
+    ASSERT_THAT(s_value, Eq("1.1.0"));
 
     ConfUtil::conf_value(*conf_ptr, "log_level", i_value);
     ASSERT_THAT(i_value, Eq(7));
