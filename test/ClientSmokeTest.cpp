@@ -8,7 +8,7 @@ using namespace ::testing;
 
 #include <Core/Message.h>
 #include <Core/Buffer.h>
-#include <Scaffold/Setting.h>
+#include <Scaffold/ConfHelper.h>
 
 #include <Protocol/Common.h>
 
@@ -22,6 +22,21 @@ using namespace tzrpc;
 using namespace tzrpc_client;
 
 TEST(ClientSmokeTest, ClientConnTest) {
+
+
+    std::string cfgFile = "tzrpc.conf";
+
+    bool b_ret = ConfHelper::instance().init(cfgFile);
+    ASSERT_TRUE(b_ret);
+
+    auto conf_ptr = ConfHelper::instance().get_conf();
+    ASSERT_TRUE(conf_ptr);
+
+    std::string addr_ip;
+    int         bind_port;
+    ConfUtil::conf_value(*conf_ptr, "network.bind_addr", addr_ip);
+    ConfUtil::conf_value(*conf_ptr, "network.listen_port", bind_port);
+
 
     std::string msg_str("nicol, taoz from test");
 
@@ -38,7 +53,7 @@ TEST(ClientSmokeTest, ClientConnTest) {
     // TCP client
     boost::asio::io_service io_service;
     ip::tcp::socket socket(io_service);
-    socket.connect(ip::tcp::endpoint(boost::asio::ip::address::from_string(setting.serv_ip_), setting.bind_port_));
+    socket.connect(ip::tcp::endpoint(boost::asio::ip::address::from_string(addr_ip), bind_port));
 
 #if 0
 
@@ -67,10 +82,24 @@ TEST(ClientSmokeTest, ClientConnTest) {
 
 TEST(ClientSmokeTest, RpcClientTest) {
 
+    std::string cfgFile = "tzrpc.conf";
+
+    bool b_ret = ConfHelper::instance().init(cfgFile);
+    ASSERT_TRUE(b_ret);
+
+    auto conf_ptr = ConfHelper::instance().get_conf();
+    ASSERT_TRUE(conf_ptr);
+
+    std::string addr_ip;
+    int         bind_port;
+    ConfUtil::conf_value(*conf_ptr, "network.bind_addr", addr_ip);
+    ConfUtil::conf_value(*conf_ptr, "network.listen_port", bind_port);
+
+
     std::string msg_str("nicol, taoz from test rpc");
 
-    RpcClient client(setting.serv_ip_, setting.bind_port_);
-    log_debug("create client with %s:%u", setting.serv_ip_.c_str(), setting.bind_port_);
+    RpcClient client(addr_ip, bind_port);
+    log_debug("create client with %s:%u", addr_ip.c_str(), bind_port);
 
     std::string rsp_str1;
     client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, msg_str, rsp_str1);

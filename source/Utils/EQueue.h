@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __UTILS_EQUEUE_H__
 #define __UTILS_EQUEUE_H__
 
@@ -9,6 +16,9 @@
 #include <chrono>
 #include <functional>
 
+
+namespace tzrpc {
+
 template<typename T>
 class EQueue {
 public:
@@ -19,6 +29,12 @@ public:
         std::lock_guard<std::mutex> lock(lock_);
         items_.push_back(t);
         item_notify_.notify_one();
+    }
+    template< typename InputIt >
+    void PUSH(InputIt first, InputIt last) {
+        std::lock_guard<std::mutex> lock(lock_);
+        items_.insert(items_.end(), first, last);
+        item_notify_.notify_all();
     }
 
     void POP(T& t) {
@@ -34,6 +50,16 @@ public:
         T t = items_.front();
         items_.pop_front();
         return t;
+    }
+    size_t TRY_POP(std::vector<T>& vec) {
+        std::unique_lock<std::mutex> lock(lock_);
+        if (items_.empty()) {
+            return 0;
+        }
+        vec.clear();
+        vec.assign(items_.begin(), items_.end());
+        items_.clear();
+        return vec.size();
     }
 
     size_t POP(std::vector<T>& vec, size_t max_count, uint64_t msec) {
@@ -121,6 +147,8 @@ private:
     std::deque<T> items_;
 };
 
+
+} // end namespace tzrpc
 
 #endif // __UTILS_EQUEUE_H__
 

@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <thread>
 #include <functional>
 
@@ -245,9 +252,15 @@ void TcpConnSync::set_ops_cancel_timeout() {
         return;
     }
 
-    ops_cancel_timer_.reset( new boost::asio::deadline_timer (io_service_,
-                                      boost::posix_time::seconds(client_setting_.client_ops_cancel_time_out_)) );
+    boost::system::error_code ignore_ec;
+    if (ops_cancel_timer_) {
+        ops_cancel_timer_->cancel(ignore_ec);
+    } else {
+        ops_cancel_timer_.reset(new steady_timer(io_service_));
+    }
+
     SAFE_ASSERT(client_setting_.client_ops_cancel_time_out_ );
+    ops_cancel_timer_->expires_from_now(boost::chrono::seconds(client_setting_.client_ops_cancel_time_out_));
     ops_cancel_timer_->async_wait(std::bind(&TcpConnSync::ops_cancel_timeout_call, shared_from_this(),
                                             std::placeholders::_1));
 }
@@ -280,4 +293,4 @@ void TcpConnSync::ops_cancel_timeout_call(const boost::system::error_code& ec) {
 
 
 
-} // end tzrpc_client
+} // end namespace tzrpc_client

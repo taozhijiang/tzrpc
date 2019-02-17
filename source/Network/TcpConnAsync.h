@@ -1,3 +1,11 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
+
 #ifndef __NETWORK_TCP_CONN_ASYNC_H__
 #define __NETWORK_TCP_CONN_ASYNC_H__
 
@@ -69,7 +77,7 @@ private:
 
     bool was_cancelled_;
     std::mutex ops_cancel_mutex_;
-    std::unique_ptr<boost::asio::deadline_timer> ops_cancel_timer_;
+    std::unique_ptr<steady_timer> ops_cancel_timer_;
 
     // Of course, the handlers may still execute concurrently with other handlers that
     // were not dispatched through an boost::asio::strand, or were dispatched through
@@ -95,6 +103,6 @@ private:
 };
 
 
-} // end tzrpc
+} // end namespace tzrpc
 
 #endif // __NETWORK_TCP_CONN_ASYNC_H__

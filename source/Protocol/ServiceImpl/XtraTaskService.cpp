@@ -1,10 +1,173 @@
-
 #include <Utils/Log.h>
+
 #include <Core/ProtoBuf.h>
 
 #include "XtraTaskService.h"
 
 namespace tzrpc {
+
+bool XtraTaskService::init() {
+
+    auto conf_ptr = ConfHelper::instance().get_conf();
+    if(!conf_ptr) {
+        log_err("ConfHelper not initialized? return conf_ptr empty!!!");
+        return false;
+    }
+
+    bool init_success = false;
+    const libconfig::Setting &rpc_services = conf_ptr->lookup("services");
+    for(int i = 0; i < rpc_services.getLength(); ++i) {
+
+        const libconfig::Setting& service = rpc_services[i];
+        std::string instance_name;
+        ConfUtil::conf_value(service, "instance_name", instance_name);
+        if (instance_name.empty()) {
+            log_err("check service conf, required instance_name not found, skip this one.");
+            continue;
+        }
+
+        log_debug("detected instance_name: %s", instance_name.c_str());
+
+        // 发现是匹配的，则找到对应虚拟主机的配置文件了
+        if (instance_name == instance_name_) {
+            if (!handle_rpc_service_conf(service)) {
+                log_err("handle detail conf for %s failed.", instance_name.c_str());
+                return false;
+            }
+
+            log_debug("handle detail conf for host %s success!", instance_name.c_str());
+            // OK
+            init_success = true;
+            break;
+        }
+    }
+
+    if(!init_success) {
+        log_err("host %s init failed, may not configure for it?", instance_name_.c_str());
+    }
+    return init_success;
+}
+
+// 系统启动时候初始化，持有整个锁进行
+bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting) {
+
+    std::unique_lock<std::mutex> lock(conf_lock_);
+
+    if (!conf_ptr_) {
+        conf_ptr_.reset(new DetailExecutorConf());
+        if (!conf_ptr_) {
+            log_err("create DetailExecutorConf instance failed.");
+            return false;
+        }
+    }
+
+    ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr_->executor_conf_.exec_thread_number_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr_->executor_conf_.exec_thread_number_hard_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_step_queue_size", conf_ptr_->executor_conf_.exec_thread_step_queue_size_);
+
+    // 检查ExecutorConf参数合法性
+    if (conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_) {
+        conf_ptr_->executor_conf_.exec_thread_number_hard_ = conf_ptr_->executor_conf_.exec_thread_number_;
+    }
+
+    if (conf_ptr_->executor_conf_.exec_thread_number_ <= 0 ||
+        conf_ptr_->executor_conf_.exec_thread_number_ > 100 ||
+        conf_ptr_->executor_conf_.exec_thread_number_hard_ > 100 ||
+        conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_ )
+    {
+        log_err("invalid exec_thread_pool_size setting: %d, %d",
+                conf_ptr_->executor_conf_.exec_thread_number_, conf_ptr_->executor_conf_.exec_thread_number_hard_);
+        return false;
+    }
+
+    if (conf_ptr_->executor_conf_.exec_thread_step_queue_size_ < 0) {
+        log_err("invalid exec_thread_step_queue_size setting: %d",
+                conf_ptr_->executor_conf_.exec_thread_step_queue_size_);
+        return false;
+    }
+
+    // other confs may handle here...
+
+    return true;
+}
+
+
+
+ExecutorConf XtraTaskService::get_executor_conf() override {
+    SAFE_ASSERT(conf_ptr_);
+    return conf_ptr_->executor_conf_;
+}
+
+int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override {
+
+    const libconfig::Setting &rpc_services = conf.lookup("services");
+    for(int i = 0; i < rpc_services.getLength(); ++i) {
+
+        const libconfig::Setting& service = rpc_services[i];
+        std::string instance_name;
+        ConfUtil::conf_value(service, "instance_name", instance_name);
+
+        // 发现是匹配的，则找到对应虚拟主机的配置文件了
+        if (instance_name == instance_name_) {
+            log_notice("about to handle_rpc_service_runtime_conf update for %s", instance_name_.c_str());
+            return handle_rpc_service_runtime_conf(service);
+        }
+    }
+
+    log_err("conf for %s not found!!!!", instance_name_.c_str());
+    return -1;
+}
+
+// 做一些可选的配置动态更新
+bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& setting) {
+
+    std::shared_ptr<DetailExecutorConf> conf_ptr = std::make_shared<DetailExecutorConf>();
+    if (!conf_ptr) {
+        log_err("create DetailExecutorConf instance failed.");
+        return -1;
+    }
+
+    ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr->executor_conf_.exec_thread_number_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr->executor_conf_.exec_thread_number_hard_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_step_queue_size", conf_ptr->executor_conf_.exec_thread_step_queue_size_);
+
+    // 检查ExecutorConf参数合法性
+    if (conf_ptr->executor_conf_.exec_thread_number_hard_ < conf_ptr->executor_conf_.exec_thread_number_) {
+        conf_ptr->executor_conf_.exec_thread_number_hard_ = conf_ptr->executor_conf_.exec_thread_number_;
+    }
+
+    if (conf_ptr->executor_conf_.exec_thread_number_ <= 0 ||
+        conf_ptr->executor_conf_.exec_thread_number_ > 100 ||
+        conf_ptr->executor_conf_.exec_thread_number_hard_ > 100 ||
+        conf_ptr->executor_conf_.exec_thread_number_hard_ < conf_ptr->executor_conf_.exec_thread_number_ )
+    {
+        log_err("invalid exec_thread_pool_size setting: %d, %d",
+                conf_ptr->executor_conf_.exec_thread_number_, conf_ptr->executor_conf_.exec_thread_number_hard_);
+        return -1;
+    }
+
+    if (conf_ptr->executor_conf_.exec_thread_step_queue_size_ < 0) {
+        log_err("invalid exec_thread_step_queue_size setting: %d",
+                conf_ptr->executor_conf_.exec_thread_step_queue_size_);
+        return -1;
+    }
+
+    {
+        // do swap here
+        std::unique_lock<std::mutex> lock(conf_lock_);
+        conf_ptr_.swap(conf_ptr);
+    }
+
+    return 0;
+}
+
+int XtraTaskService::module_status(std::string& strModule, std::string& strKey, std::string& strValue) override {
+
+    // empty status ...
+
+    return 0;
+}
+
 
 void XtraTaskService::handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) override {
 

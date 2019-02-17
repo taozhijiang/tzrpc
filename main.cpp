@@ -1,7 +1,7 @@
 #include <signal.h>
-void backtrace_init();
 
-#include <iostream>
+#include <ctime>
+#include <cstdio>
 #include <sstream>
 
 #include <syslog.h>
@@ -12,14 +12,40 @@ void backtrace_init();
 #include <Utils/Log.h>
 #include <Utils/SslSetup.h>
 
-#include <Scaffold/Setting.h>
+#include <Scaffold/ConfHelper.h>
+#include <Scaffold/Status.h>
+
 #include <Scaffold/Manager.h>
+
+static void interrupted_callback(int signal){
+    tzrpc::log_alert("Signal %d received ...", signal);
+    switch(signal) {
+        case SIGHUP:
+            tzrpc::log_notice("SIGHUP recv, do update_run_conf... ");
+            tzrpc::ConfHelper::instance().update_runtime_conf();
+            break;
+
+        case SIGUSR1:
+            tzrpc::log_notice("SIGUSR recv, do module_status ... ");
+            {
+                std::string output;
+                tzrpc::Status::instance().collect_status(output);
+                std::cout << output << std::endl;
+                tzrpc::log_notice("%s", output.c_str());
+            }
+            break;
+
+        default:
+            tzrpc::log_err("Unhandled signal: %d", signal);
+            break;
+    }
+}
 
 static void init_signal_handle(){
 
     ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGUSR1, SIG_IGN);
-    ::signal(SIGUSR2, SIG_IGN);
+    ::signal(SIGUSR1, interrupted_callback);
+    ::signal(SIGHUP,  interrupted_callback);
 
     return;
 }
@@ -70,7 +96,7 @@ static int create_process_pid() {
     FILE* fp = fopen(pid_file, "w+");
 
     if (!fp) {
-        log_err("Create pid file %s failed!", pid_file);
+        tzrpc::log_err("Create pid file %s failed!", pid_file);
         return -1;
     }
 
@@ -107,82 +133,70 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    fprintf(stderr, "we using system configure file %s\n", cfgFile);
 
-    std::cout << "we using system configure file: " << cfgFile << std::endl;
-    if (!tzrpc::sys_config_init(cfgFile)) {
-        std::cout << "handle system configure " << cfgFile <<" failed!" << std::endl;
-        return -1;
-    }
-
-    set_checkpoint_log_store_func(syslog);
-    if (!log_init(tzrpc::setting.log_level_)) {
+    tzrpc::set_checkpoint_log_store_func(syslog);
+    if (!tzrpc::log_init(7)) {
         std::cerr << "init syslog failed!" << std::endl;
-        return -1;
+        ::exit(EXIT_FAILURE);
     }
+    tzrpc::log_debug("syslog initialized ok!");
+
+    // test boost::atomic
+    boost::atomic<int> atomic_int;
+    if (atomic_int.is_lock_free()) {
+        tzrpc::log_notice(">>> GOOD <<<, your system atomic is lock_free ...");
+    } else {
+        tzrpc::log_err(">>> BAD <<<, your system atomic is not lock_free, may impact performance ...");
+    }
+
+
+    // SSL 环境设置
+    if (!tzrpc::Ssl_thread_setup()) {
+        tzrpc::log_err("SSL env setup error!");
+        ::exit(EXIT_FAILURE);
+    }
+
 
     // daemonize should before any thread creation...
     if (daemonize) {
-        std::cout << "we will daemonize this service..." << std::endl;
-        log_notice("we will daemonize this service...");
+        tzrpc::log_notice("we will daemonize this service...");
 
         bool chdir = false; // leave the current working directory in case
                             // the user has specified relative paths for
                             // the config file, etc
         bool close = true;  // close stdin, stdout, stderr
         if (::daemon(!chdir, !close) != 0) {
-            log_err("call to daemon() failed: %s", strerror(errno));
-            std::cout << "call to daemon() failed: " << strerror(errno) << std::endl;
+            tzrpc::log_err("call to daemon() failed: %s.", strerror(errno));
             ::exit(EXIT_FAILURE);
         }
     }
-
-    log_debug("syslog initialized ok!");
-    time_t now = ::time(NULL);
-    struct tm service_start;
-    ::localtime_r(&now, &service_start);
-    log_info("service started at %s", ::asctime(&service_start));
-
-    // test boost::atomic
-    boost::atomic<int> atomic_int;
-    if (atomic_int.is_lock_free()) {
-        log_alert(">>> GOOD <<<, your system atomic is lock_free ...");
-    } else {
-        log_err(">>> BAD <<<, your system atomic is not lock_free, may impact performance ...");
-    }
-
-    // SSL 环境设置
-    if (!Ssl_thread_setup()) {
-        log_err("SSL env setup error!");
-        ::exit(1);
-    }
-
 
     (void)tzrpc::Manager::instance(); // create object first!
 
     create_process_pid();
     init_signal_handle();
-    backtrace_init();
+    tzrpc::backtrace_init();
+
 
     {
         PUT_COUNT_FUNC_PERF(Manager_init);
-        if(!tzrpc::Manager::instance().init()) {
-            log_err("Manager init error!");
-            ::exit(1);
+        if(!tzrpc::Manager::instance().init(cfgFile)) {
+            tzrpc::log_err("system manager init error!");
+            ::exit(EXIT_FAILURE);
         }
     }
 
-    log_debug( "service initialized ok!");
+    std::time_t now = boost::chrono::system_clock::to_time_t(boost::chrono::system_clock::now());
+    char mbstr[32] {};
+    std::strftime(mbstr, sizeof(mbstr), "%F %T", std::localtime(&now));
+    tzrpc::log_info("service started at %s", mbstr);
+
+    tzrpc::log_notice("whole service initialized ok!");
     tzrpc::Manager::instance().service_joinall();
 
-    Ssl_thread_clean();
+    tzrpc::Ssl_thread_clean();
 
     return 0;
 }
 
-
-
-namespace boost {
-void assertion_failed(char const * expr, char const * function, char const * file, long line) {
-    log_err("BAD!!! expr `%s` assert failed at %s(%ld): %s", expr, file, line, function);
-}
-} // end boost

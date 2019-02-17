@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __UTILS_UTILS_H__
 #define __UTILS_UTILS_H__
 
@@ -5,11 +12,13 @@
 
 #include <xtra_rhel6.h>
 
-void backtrace_init();
-int set_nonblocking(int fd);
-
-
 #include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
+
+
+namespace tzrpc {
+
+void backtrace_init();
 
 template <typename T>
 std::string convert_to_string(const T& arg) {
@@ -22,7 +31,6 @@ std::string convert_to_string(const T& arg) {
 }
 
 
-#include <boost/format.hpp>
 
 struct COUNT_FUNC_PERF: public boost::noncopyable {
 
@@ -49,7 +57,10 @@ private:
     struct timeval start_;
 };
 
-#define PUT_COUNT_FUNC_PERF(T) COUNT_FUNC_PERF PERF_CHECKER_##T( boost::str(boost::format("%s(%ld):%s") % __FILE__%__LINE__%BOOST_CURRENT_FUNCTION), #T ); \
+} // end namespace tzrpc
+
+#define PUT_COUNT_FUNC_PERF(T) \
+                tzrpc::COUNT_FUNC_PERF PERF_CHECKER_##T( boost::str(boost::format("%s(%ld):%s") % __FILE__%__LINE__%BOOST_CURRENT_FUNCTION), #T ); \
                 (void) PERF_CHECKER_##T
 
 

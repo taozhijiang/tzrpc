@@ -1,9 +1,17 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __UTILS_THREAD_POOL_H__
 #define __UTILS_THREAD_POOL_H__
 
 #include <boost/thread.hpp>
 #include <memory>
 
+namespace tzrpc {
 
 enum ThreadStatus {
     kInit = 1,
@@ -56,4 +64,5 @@ public:
 
 };
 
+} // end namespace tzrpc
 #endif // __UTILS_THREAD_POOL_H__

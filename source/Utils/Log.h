@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __UTILS_LOG_H__
 #define __UTILS_LOG_H__
 
@@ -24,6 +31,8 @@
 // man 3 syslog
 #include <syslog.h>
 
+namespace tzrpc {
+
 bool log_init(int log_level);
 void log_close();
 void log_api(int priority, const char *file, int line, const char *func, const char *msg, ...)
@@ -44,5 +53,9 @@ void log_api(int priority, const char *file, int line, const char *func, const c
 typedef void(* CP_log_store_func_t)(int priority, const char *format, ...);
 extern CP_log_store_func_t checkpoint_log_store_func_impl_;
 void set_checkpoint_log_store_func(CP_log_store_func_t func);
+
+
+} // end namespace tzrpc
+
 
 #endif // __UTILS_LOG_H__

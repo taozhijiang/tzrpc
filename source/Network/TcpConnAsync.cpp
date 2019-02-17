@@ -1,3 +1,9 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
 
 #include <thread>
 #include <functional>
@@ -60,7 +66,7 @@ int TcpConnAsync::parse_header() {
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion ||
-        recv_bound_.header_.length > setting.max_msg_size_) {
+        recv_bound_.header_.length > server_.max_msg_size()) {
         log_err("message header check error!");
         return -1;
     }
@@ -192,7 +198,7 @@ void TcpConnAsync::do_read_msg() {
             // 转发到RPC请求
             log_debug("read_message: %s", msg.dump().c_str());
             log_debug("read message finished, dispatch for RPC process.");
-            auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this());
+            auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this(), server_.max_msg_size());
             Dispatcher::instance().handle_RPC(instance);
 
             return do_read(); // read again for future
@@ -233,7 +239,7 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
         // 转发到RPC请求
         log_debug("read_message: %s", msg.dump().c_str());
         log_debug("read message finished, dispatch for RPC process.");
-        auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this());
+        auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this(), server_.max_msg_size());
         Dispatcher::instance().handle_RPC(instance);
 
         return do_read();
@@ -346,16 +352,23 @@ void TcpConnAsync::set_ops_cancel_timeout() {
 
     std::lock_guard<std::mutex> lock(ops_cancel_mutex_);
 
-    if (setting.ops_cancel_time_out_  == 0) {
+    if (server_.ops_cancel_time_out()  == 0) {
         SAFE_ASSERT(!ops_cancel_timer_);
         return;
     }
 
-    ops_cancel_timer_.reset( new boost::asio::deadline_timer (server_.io_service_,
-                                      boost::posix_time::seconds(setting.ops_cancel_time_out_ )) );
-    SAFE_ASSERT(setting.ops_cancel_time_out_ );
+    // cancel the already timer first if any
+    boost::system::error_code ignore_ec;
+    if (ops_cancel_timer_) {
+        ops_cancel_timer_->cancel(ignore_ec);
+    } else {
+        ops_cancel_timer_.reset(new steady_timer(server_.io_service_));
+    }
+
+    SAFE_ASSERT(server_.ops_cancel_time_out() );
+    ops_cancel_timer_->expires_from_now(boost::chrono::seconds(server_.ops_cancel_time_out()));
     ops_cancel_timer_->async_wait(std::bind(&TcpConnAsync::ops_cancel_timeout_call, shared_from_this(),
-                                           std::placeholders::_1));
+                                            std::placeholders::_1));
     return;
 }
 
@@ -373,7 +386,7 @@ void TcpConnAsync::revoke_ops_cancel_timeout() {
 void TcpConnAsync::ops_cancel_timeout_call(const boost::system::error_code& ec) {
 
     if (ec == 0){
-        log_info("ops_cancel_timeout_call called with timeout: %d", setting.ops_cancel_time_out_ );
+        log_info("ops_cancel_timeout_call called with timeout: %d", server_.ops_cancel_time_out() );
         ops_cancel();
         sock_shutdown_and_close(ShutdownType::kBoth);
     } else if ( ec == boost::asio::error::operation_aborted) {
@@ -384,4 +397,4 @@ void TcpConnAsync::ops_cancel_timeout_call(const boost::system::error_code& ec) 
 }
 
 
-} // end tzrpc
+} // end namespace tzrpc

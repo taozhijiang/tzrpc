@@ -1,3 +1,11 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
+
 #ifndef __NETWORK_NET_CONN_H__
 #define __NETWORK_NET_CONN_H__
 
@@ -135,6 +143,6 @@ struct IOBound {
 };
 
 
-} // end tzrpc
+} // end namespace tzrpc
 
 #endif // __NETWORK_NET_CONN_H__

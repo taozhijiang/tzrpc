@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 
 #include <RPC/RpcInstance.h>
 
@@ -25,7 +32,7 @@ bool RpcInstance::validate_request() {
     opcode_ = header.opcode;
 
     std::string msg_str;
-    request_.consume(msg_str, setting.max_msg_size_ - sizeof(RpcRequestHeader));
+    request_.consume(msg_str, max_msg_size_ - sizeof(RpcRequestHeader));
     if (msg_str.empty()) {
         return false;
     }
@@ -71,4 +78,4 @@ void RpcInstance::reject(RpcResponseStatus status) {
 
 
 
-} // end tzrpc
+} // end namespace tzrpc

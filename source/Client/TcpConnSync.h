@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __NETWORK_TCP_CONN_SYNC_H__
 #define __NETWORK_TCP_CONN_SYNC_H__
 
@@ -68,7 +75,7 @@ private:
 
     bool was_cancelled_;
     std::mutex ops_cancel_mutex_;
-    std::unique_ptr<boost::asio::deadline_timer> ops_cancel_timer_;
+    std::unique_ptr<steady_timer> ops_cancel_timer_;
 
     // http://www.boost.org/doc/libs/1_44_0/doc/html/boost_asio/reference/error__basic_errors.html
     bool handle_socket_ec(const boost::system::error_code& ec);
@@ -81,7 +88,7 @@ private:
 };
 
 
-} // end tzrpc_client
+} // end namespace tzrpc_client
 
 
 #endif // __NETWORK_TCP_CONN_SYNC_H__

@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <openssl/ssl.h>
 #include <pthread.h>
 #include <string>
@@ -5,6 +12,8 @@
 
 #include <Utils/SslSetup.h>
 #include <Utils/Log.h>
+
+namespace tzrpc {
 
 /* This array will store all of the mutexes available to OpenSSL. */
 static pthread_mutex_t* mutex_buf = NULL;
@@ -129,4 +138,8 @@ void Ssl_thread_clean() {
 
     return;
 }
+
+
+
+} // end namespace tzrpc
 

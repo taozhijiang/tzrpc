@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __RPC_REQUEST_MESSAGE_H__
 #define __RPC_REQUEST_MESSAGE_H__
 
@@ -7,7 +14,6 @@
 #include <string>
 
 #include <Utils/Utils.h>
-#include <Scaffold/Setting.h>
 
 namespace tzrpc {
 
@@ -103,6 +109,6 @@ static inline bool RpcRequestMessageParse(const std::string& str, RpcRequestMess
     return true;
 }
 
-} // end tzrpc
+} // end namespace tzrpc
 
 #endif // __RPC_REQUEST_MESSAGE_H__

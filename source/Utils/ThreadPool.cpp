@@ -1,13 +1,22 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <mutex>
 #include <functional>
 
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 #include <Utils/Log.h>
 #include <Utils/ThreadPool.h>
 
 // impl details
+namespace tzrpc {
 
 class ThreadPool::Impl : private boost::noncopyable {
 
@@ -38,7 +47,7 @@ public:
         }
         func_ = func; // record it
 
-        for (int i=0; i<pool_size_; ++i) {
+        for (uint32_t i=0; i<pool_size_; ++i) {
             ThreadObjPtr workobj(new ThreadObj(ThreadStatus::kInit));
             if (!workobj) {
                 log_err("create ThreadObj failed!");
@@ -138,8 +147,7 @@ public:
         enum ThreadStatus old_status = it->second->status_;
         it->second->status_ = ThreadStatus::kTerminating;
         if (timed_seconds) {
-            const boost::system_time timeout = boost::get_system_time() + boost::posix_time::milliseconds(timed_seconds * 1000);
-            it->first->timed_join(timeout);
+            it->first->try_join_for(boost::chrono::seconds(timed_seconds));
         } else {
             it->first->join();
         }
@@ -150,6 +158,7 @@ public:
 
             return false;
         }
+         log_alert("Joined Task Success ...");
 
         // release this thread object
         pool_size_ --;
@@ -185,7 +194,7 @@ public:
 private:
     int spawn_task(uint32_t num){
 
-        for (int i = 0; i < num; ++i) {
+        for (uint32_t i = 0; i < num; ++i) {
             ThreadObjPtr workobj(new ThreadObj(ThreadStatus::kInit));
             if (!workobj) {
                 log_err("create ThreadObj failed!");
@@ -304,3 +313,4 @@ ThreadPool::ThreadPool(uint32_t pool_size) {
 ThreadPool::~ThreadPool() {
 }
 
+} // end namespace tzrpc

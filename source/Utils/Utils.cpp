@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <execinfo.h>
 
 #include <sys/types.h>
@@ -5,6 +12,8 @@
 
 #include <Utils/Utils.h>
 #include <Utils/Log.h>
+
+namespace tzrpc {
 
 static void backtrace_info(int sig, siginfo_t *info, void *f) {
     int j, nptrs;
@@ -55,3 +64,5 @@ void backtrace_init() {
 void COUNT_FUNC_PERF::display_info(const std::string& env, int64_t time_ms, int64_t time_us) {
     log_debug("%s, %s perf: %ld.%ld ms", env_.c_str(), key_.c_str(), time_ms, time_us);
 }
+
+} // ens namespace tzrpc
