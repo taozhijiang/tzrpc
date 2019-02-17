@@ -1,12 +1,13 @@
 /*-
- * Copyright (c) 2018 TAO Zhijiang<taozhijiang@gmail.com>
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
  *
  * Licensed under the BSD-3-Clause license, see LICENSE for full information.
  *
  */
 
-#ifndef __TZHTTPD_STR_UTIL_H__
-#define __TZHTTPD_STR_UTIL_H__
+
+#ifndef __UTILS_STR_UTIL_H__
+#define __UTILS_STR_UTIL_H__
 
 #include <libconfig.h++>
 
@@ -143,4 +144,4 @@ private:
 
 } // end namespace tzrpc
 
-#endif // __TZHTTPD_STR_UTIL_H__
+#endif // __UTILS_STR_UTIL_H__

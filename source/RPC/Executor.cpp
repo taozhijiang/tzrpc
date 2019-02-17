@@ -1,3 +1,11 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
+
 #include <xtra_rhel6.h>
 
 #include <RPC/RpcInstance.h>
@@ -157,4 +165,4 @@ int Executor::update_runtime_conf(const libconfig::Config& conf) {
     return ret;
 }
 
-} // end tzrpc
+} // end namespace tzrpc

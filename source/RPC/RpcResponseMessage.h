@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __RPC_RESPONSE_MESSAGE_H__
 #define __RPC_RESPONSE_MESSAGE_H__
 
@@ -130,6 +137,6 @@ static inline bool RpcResponseMessageParse(const std::string& str, RpcResponseMe
     return true;
 }
 
-} // end tzrpc
+} // end namespace tzrpc
 
 #endif // __RPC_RESPONSE_MESSAGE_H__

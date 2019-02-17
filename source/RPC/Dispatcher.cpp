@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <RPC/Dispatcher.h>
 
 namespace tzrpc {
@@ -26,5 +33,5 @@ int Dispatcher::update_runtime_conf(const libconfig::Config& conf) {
     return ret_sum;
 }
 
-} // tzrpc
+} // end namespace tzrpc
 

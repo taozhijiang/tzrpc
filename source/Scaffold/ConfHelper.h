@@ -1,12 +1,13 @@
 /*-
- * Copyright (c) 2018 TAO Zhijiang<taozhijiang@gmail.com>
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
  *
  * Licensed under the BSD-3-Clause license, see LICENSE for full information.
  *
  */
 
-#ifndef __TZHTTPD_CONF_HELPER__
-#define __TZHTTPD_CONF_HELPER__
+
+#ifndef __SCAFFOLD_CONF_HELPER__
+#define __SCAFFOLD_CONF_HELPER__
 
 #include <memory>
 #include <mutex>
@@ -119,4 +120,4 @@ private:
 
 } // end namespace tzrpc
 
-#endif // __TZHTTPD_CFG_HELPER__
+#endif // __SCAFFOLD_CONF_HELPER__

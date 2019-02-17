@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <thread>
 #include <functional>
 
@@ -286,4 +293,4 @@ void TcpConnSync::ops_cancel_timeout_call(const boost::system::error_code& ec) {
 
 
 
-} // end tzrpc_client
+} // end namespace tzrpc_client

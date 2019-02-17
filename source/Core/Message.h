@@ -1,3 +1,11 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
+
 #ifndef __CORE_MESSAGE_H__
 #define __CORE_MESSAGE_H__
 
@@ -82,6 +90,6 @@ struct Message {
 };
 
 
-} // end tzrpc
+} // end namespace tzrpc
 
 #endif // __CORE_MESSAGE_H__

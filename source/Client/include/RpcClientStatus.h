@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __RPC_CLIENT_STATUS_H__
 #define __RPC_CLIENT_STATUS_H__
 
@@ -42,6 +49,6 @@ enum class RpcClientStatus: uint8_t {
 
 
 
-} // end tzrpc_client
+} // end namespace tzrpc_client
 
 #endif // __RPC_CLIENT_STATUS_H__

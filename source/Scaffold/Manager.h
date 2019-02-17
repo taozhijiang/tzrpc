@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __SCAFFOLD_MANAGER_H__
 #define __SCAFFOLD_MANAGER_H__
 
@@ -39,7 +46,7 @@ public:
     std::shared_ptr<NetServer> net_server_ptr_;
 };
 
-} // end tzrpc
+} // end namespace tzrpc
 
 
 #endif //__SCAFFOLD_MANAGER_H__

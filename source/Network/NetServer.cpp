@@ -1,5 +1,11 @@
-#include <xtra_rhel6.h>
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
 
+#include <xtra_rhel6.h>
 
 #include <Network/NetServer.h>
 #include <Network/TcpConnAsync.h>
@@ -343,4 +349,4 @@ int NetServer::update_runtime_conf(const libconfig::Config& cfg) {
 
 
 
-} // end tzrpc
+} // end namespace tzrpc

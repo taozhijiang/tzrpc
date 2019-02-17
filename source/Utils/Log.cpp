@@ -1,9 +1,19 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <xtra_rhel6.h>
 
 #include <vector>
 #include <boost/algorithm/string.hpp>
 
 #include <Utils/Log.h>
+
+
+namespace tzrpc {
 
 //
 // define here
@@ -70,4 +80,10 @@ void log_api(int priority, const char *file, int line, const char *func, const c
         }
     }
 }
+
+
+
+
+
+} // end namespace tzrpc
 

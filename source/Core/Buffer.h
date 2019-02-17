@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __CORE_BUFFER_H__
 #define __CORE_BUFFER_H__
 
@@ -124,6 +131,6 @@ private:
     std::vector<char> data_;
 };
 
-} // end tzrpc
+} // end namespace tzrpc
 
 #endif // __CORE_BUFFER_H__

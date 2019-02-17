@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #include <xtra_asio.h>
 
 #include "include/RpcClient.h"
@@ -161,4 +168,4 @@ RpcClientStatus RpcClient::call_RPC(uint16_t service_id, uint16_t opcode,
     return impl_->call_RPC(service_id, opcode, payload, respload);
 }
 
-} // end tzrpc
+} // end namespace tzrpc_client

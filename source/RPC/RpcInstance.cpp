@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 
 #include <RPC/RpcInstance.h>
 
@@ -71,4 +78,4 @@ void RpcInstance::reject(RpcResponseStatus status) {
 
 
 
-} // end tzrpc
+} // end namespace tzrpc

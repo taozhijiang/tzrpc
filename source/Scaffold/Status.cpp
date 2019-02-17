@@ -1,11 +1,12 @@
 /*-
- * Copyright (c) 2018 TAO Zhijiang<taozhijiang@gmail.com>
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
  *
  * Licensed under the BSD-3-Clause license, see LICENSE for full information.
  *
  */
 
-#include "Status.h"
+
+#include <Scaffold/Status.h>
 
 namespace tzrpc {
 

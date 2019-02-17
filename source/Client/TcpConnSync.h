@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __NETWORK_TCP_CONN_SYNC_H__
 #define __NETWORK_TCP_CONN_SYNC_H__
 
@@ -81,7 +88,7 @@ private:
 };
 
 
-} // end tzrpc_client
+} // end namespace tzrpc_client
 
 
 #endif // __NETWORK_TCP_CONN_SYNC_H__

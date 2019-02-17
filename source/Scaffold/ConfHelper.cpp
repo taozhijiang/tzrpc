@@ -1,11 +1,12 @@
 /*-
- * Copyright (c) 2018 TAO Zhijiang<taozhijiang@gmail.com>
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
  *
  * Licensed under the BSD-3-Clause license, see LICENSE for full information.
  *
  */
 
-#include "ConfHelper.h"
+
+#include <Scaffold/ConfHelper.h>
 
 namespace tzrpc {
 
@@ -93,4 +94,4 @@ int ConfHelper::register_conf_callback(ConfUpdateCallable func) {
 }
 
 
-} // end namespace tzhttpd
+} // end namespace tzrpc

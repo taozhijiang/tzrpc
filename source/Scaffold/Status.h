@@ -1,12 +1,13 @@
 /*-
- * Copyright (c) 2018 TAO Zhijiang<taozhijiang@gmail.com>
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
  *
  * Licensed under the BSD-3-Clause license, see LICENSE for full information.
  *
  */
 
-#ifndef __TZHTTPD_STATUS__
-#define __TZHTTPD_STATUS__
+
+#ifndef __SCAFFOLD_STATUS__
+#define __SCAFFOLD_STATUS__
 
 // 各个模块可以上报自己的状态，以json的格式输出来，然后这个模块进行数据汇总
 // 内部模块采用 internal/status进行状态的展示
@@ -56,4 +57,4 @@ private:
 
 } // end namespace tzrpc
 
-#endif // __TZHTTPD_STATUS__
+#endif // __SCAFFOLD_STATUS__

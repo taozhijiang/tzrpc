@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
 #ifndef __RPC_DISPATCHER_H__
 #define __RPC_DISPATCHER_H__
 
@@ -130,7 +137,7 @@ private:
 
 };
 
-} // tzrpc
+} // end namespace tzrpc
 
 
 #endif // __RPC_SERVICE_DISPATCHER_H__
