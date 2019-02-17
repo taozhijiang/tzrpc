@@ -13,7 +13,7 @@
 namespace boost {
 void assertion_failed(char const * expr, char const * function, char const * file, long line) {
 	fprintf(stderr, "BAD!!! expr `%s` assert failed at %s(%ld): %s", expr, file, line, function);
-    log_err("BAD!!! expr `%s` assert failed at %s(%ld): %s", expr, file, line, function);
+    tzrpc::log_err("BAD!!! expr `%s` assert failed at %s(%ld): %s", expr, file, line, function);
 }
 
 } // end namespace boost 

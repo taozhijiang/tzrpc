@@ -42,7 +42,7 @@ bool Executor::init() override {
                   conf_.exec_thread_number_hard_, conf_.exec_thread_step_queue_size_);
         threads_adjust_timer_->expires_from_now(boost::chrono::seconds(1));
         threads_adjust_timer_->async_wait(
-                    std::bind(&Executor::executor_threads_adjust, this));
+                    std::bind(&Executor::executor_threads_adjust, shared_from_this(), std::placeholders::_1));
     }
 
     Status::instance().register_status_callback(
@@ -54,7 +54,7 @@ bool Executor::init() override {
     return true;
 }
 
-void Executor::executor_threads_adjust() {
+void Executor::executor_threads_adjust(const boost::system::error_code& ec) {
 
     ExecutorConf conf {};
 
@@ -81,7 +81,7 @@ void Executor::executor_threads_adjust() {
 
     threads_adjust_timer_->expires_from_now(boost::chrono::seconds(1));
     threads_adjust_timer_->async_wait(
-            std::bind(&Executor::executor_threads_adjust, shared_from_this()));
+            std::bind(&Executor::executor_threads_adjust, shared_from_this(), std::placeholders::_1));
 
 }
 

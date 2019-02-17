@@ -15,11 +15,10 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 
-void backtrace_init();
-int set_nonblocking(int fd);
-
 
 namespace tzrpc {
+
+void backtrace_init();
 
 template <typename T>
 std::string convert_to_string(const T& arg) {
@@ -60,7 +59,8 @@ private:
 
 } // end namespace tzrpc
 
-#define PUT_COUNT_FUNC_PERF(T) COUNT_FUNC_PERF PERF_CHECKER_##T( boost::str(boost::format("%s(%ld):%s") % __FILE__%__LINE__%BOOST_CURRENT_FUNCTION), #T ); \
+#define PUT_COUNT_FUNC_PERF(T) \
+                tzrpc::COUNT_FUNC_PERF PERF_CHECKER_##T( boost::str(boost::format("%s(%ld):%s") % __FILE__%__LINE__%BOOST_CURRENT_FUNCTION), #T ); \
                 (void) PERF_CHECKER_##T
 
 

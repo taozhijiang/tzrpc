@@ -5,7 +5,3 @@ Based on:
 2. protobuf message for marshalling/unmarshalling.   
 3. gtest unit_test framework.   
 
-
-TODO:
-1. 最大并发控制和过载保护;
-2. 线程池根据负载自动伸缩(主线程？);

@@ -112,9 +112,15 @@ private:
 
     Dispatcher():
         initialized_(false),
-        services_({}) {
+        services_({}),
+        io_service_thread_(),
+        io_service_(),
+        work_guard_(new io_service::work(io_service_)){
     }
 
+    ~Dispatcher() {
+        work_guard_.reset();
+    }
     bool initialized_;
 
     // 系统在启动的时候进行注册初始化，然后再提供服务，所以
@@ -127,12 +133,20 @@ private:
     boost::thread io_service_thread_;
     io_service io_service_;
 
+    // io_service如果没有任务，会直接退出执行，所以需要
+    // 一个强制的work来持有之
+    std::unique_ptr<io_service::work> work_guard_;
     void io_service_run() {
 
         log_notice("Dispatcher io_service thread running...");
 
+        // io_service would not have had any work to do,
+        // and consequently io_service::run() would have returned immediately.
+
         boost::system::error_code ec;
         io_service_.run(ec);
+
+        log_notice("Dispatcher io_service thread terminated ...");
     }
 
 };
