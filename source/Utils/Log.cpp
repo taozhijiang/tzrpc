@@ -17,6 +17,9 @@ void set_checkpoint_log_store_func(CP_log_store_func_t func) {
 // The use of openlog() is optional; it will automatically be called by syslog() if necessary.
 bool log_init(int log_level) {
 
+    // close first, then initialize with new LOG_LEVEL
+    closelog();
+
     openlog(program_invocation_short_name, LOG_PID , LOG_LOCAL6);
     setlogmask (LOG_UPTO (log_level));
     return true;

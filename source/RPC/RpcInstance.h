@@ -14,13 +14,14 @@ namespace tzrpc {
 
 class RpcInstance {
 public:
-    RpcInstance(const std::string& str_request, std::shared_ptr<TcpConnAsync> socket):
+    RpcInstance(const std::string& str_request, std::shared_ptr<TcpConnAsync> socket, int max_msg_size):
         start_(::time(NULL)),
         full_socket_(socket),
         request_(str_request),
         rpc_request_message_(),
         response_(),
         rpc_response_message_(),
+        max_msg_size_(max_msg_size),
         service_id_(-1),
         opcode_(-1) {
     }
@@ -55,6 +56,8 @@ private:
 
     Buffer response_;
     RpcResponseMessage rpc_response_message_;
+
+    const int max_msg_size_;
 
 private:
     // these detail info were extract from request

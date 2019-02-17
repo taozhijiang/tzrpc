@@ -7,7 +7,6 @@
 #include <string>
 
 #include <Utils/Utils.h>
-#include <Scaffold/Setting.h>
 
 namespace tzrpc {
 

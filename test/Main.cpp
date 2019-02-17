@@ -9,7 +9,7 @@
 #include <Utils/Log.h>
 #include <Utils/SslSetup.h>
 
-#include <Scaffold/Setting.h>
+#include <Scaffold/ConfHelper.h>
 #include <Scaffold/Manager.h>
 
 using namespace tzrpc;
@@ -26,19 +26,30 @@ int main(int argc, char** argv) {
         ::exit(1);
     }
 
-    const std::string cfgFile = "tzrpc.conf";
-    if (!sys_config_init(cfgFile)) {
-        std::cout << "handle system configure " << cfgFile <<" failed!" << std::endl;
+    std::string cfgFile = "tzrpc.conf";
+    if(!ConfHelper::instance().init(cfgFile)){
+        return -1;
+    }
+
+    auto conf_ptr = ConfHelper::instance().get_conf();
+    if(!conf_ptr) {
+        log_err("ConfHelper return null conf pointer, maybe your conf file ill!");
+        return -1;
+    }
+
+    int log_level = 0;
+    ConfUtil::conf_value(*conf_ptr, "log_level", log_level);
+    if (log_level <= 0 || log_level > 7) {
         return -1;
     }
 
     set_checkpoint_log_store_func(syslog);
-    if (!log_init(tzrpc::setting.log_level_)) {
+    if (!log_init(log_level)) {
         std::cerr << "init syslog failed!" << std::endl;
         return -1;
     }
 
-    log_notice("syslog init success, level: %d", tzrpc::setting.log_level_);
+    log_notice("syslog init success, level: %d", log_level);
 
    return RUN_ALL_TESTS();
 }
