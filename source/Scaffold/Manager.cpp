@@ -17,6 +17,7 @@
 #include <Utils/StrUtil.h>
 #include <Utils/Utils.h>
 #include <Utils/Log.h>
+#include <Utils/Timer.h>
 
 #include <Scaffold/ConfHelper.h>
 #include <Scaffold/Manager.h>
@@ -45,8 +46,13 @@ bool Manager::init(const std::string& cfgFile) {
         return false;
     }
 
+    if (!Timer::instance().init()) {
+        log_err("init Timer service failed, critical !!!!");
+        return false;
+    }
+
     if(!ConfHelper::instance().init(cfgFile)) {
-        fprintf(stderr, "init ConfHelper (%s) failed, critical !!!!\n", cfgFile.c_str());
+        log_err("init ConfHelper (%s) failed, critical !!!!", cfgFile.c_str());
         return false;
     }
 

@@ -35,9 +35,6 @@ public:
 
         initialized_ = true;
 
-        // 创建io_service工作线程
-        io_service_thread_ = boost::thread(std::bind(&Dispatcher::io_service_run, this));
-
         for (auto iter = services_.begin(); iter != services_.end(); ++iter) {
             Executor* executor = dynamic_cast<Executor *>(iter->second.get());
 
@@ -102,24 +99,16 @@ public:
         return "Dispatcher";
     }
 
-    io_service& get_io_service() {
-        return  io_service_;
-    }
-
     int update_runtime_conf(const libconfig::Config& conf);
 
 private:
 
     Dispatcher():
         initialized_(false),
-        services_({}),
-        io_service_thread_(),
-        io_service_(),
-        work_guard_(new io_service::work(io_service_)){
+        services_({}) {
     }
 
     ~Dispatcher() {
-        work_guard_.reset();
     }
     bool initialized_;
 
@@ -127,27 +116,6 @@ private:
     // 这边就不使用锁结构进行保护了，防止影响性能
     std::map<uint16_t, std::shared_ptr<Service>> services_;
 
-
-    // 再启一个io_service_，主要使用DIspatcher单例和boost::asio异步框架
-    // 来处理定时器等常用服务
-    boost::thread io_service_thread_;
-    io_service io_service_;
-
-    // io_service如果没有任务，会直接退出执行，所以需要
-    // 一个强制的work来持有之
-    std::unique_ptr<io_service::work> work_guard_;
-    void io_service_run() {
-
-        log_notice("Dispatcher io_service thread running...");
-
-        // io_service would not have had any work to do,
-        // and consequently io_service::run() would have returned immediately.
-
-        boost::system::error_code ec;
-        io_service_.run(ec);
-
-        log_notice("Dispatcher io_service thread terminated ...");
-    }
 
 };
 
