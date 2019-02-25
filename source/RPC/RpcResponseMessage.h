@@ -36,6 +36,7 @@ enum class RpcResponseStatus : uint8_t {
     INVALID_SERVICE = 3,
 
     INVALID_REQUEST = 4,
+    SYSTEM_ERROR    = 5,
 };
 
 // Message已经能保证RPC的消息被完整的接收了，所以这边不需要保存msg的长度了

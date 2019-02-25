@@ -40,6 +40,7 @@ enum class RpcClientStatus: uint8_t {
     NETWORK_BEFORE_ERROR = 5,
     NETWORK_CONNECT_ERROR = 6,
 
+    // 实际可能操作了网络部分
     NETWORK_SEND_ERROR = 7,
     NETWORK_RECV_ERROR = 8,
 

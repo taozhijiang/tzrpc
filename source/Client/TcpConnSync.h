@@ -14,8 +14,11 @@
 
 namespace tzrpc_client {
 
+using tzrpc::Message;
+using tzrpc::NetConn;
+using tzrpc::IOBound;
+using tzrpc::ConnStat;
 class RpcClientSetting;
-using namespace tzrpc;
 
 class TcpConnSync: public NetConn, public boost::noncopyable,
                    public std::enable_shared_from_this<TcpConnSync> {

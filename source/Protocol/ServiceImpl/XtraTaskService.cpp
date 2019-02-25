@@ -15,7 +15,9 @@ bool XtraTaskService::init() {
     }
 
     bool init_success = false;
-    const libconfig::Setting &rpc_services = conf_ptr->lookup("services");
+
+    //todo try-catch protect
+    const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc_services");
     for(int i = 0; i < rpc_services.getLength(); ++i) {
 
         const libconfig::Setting& service = rpc_services[i];
@@ -100,7 +102,7 @@ ExecutorConf XtraTaskService::get_executor_conf() override {
 
 int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override {
 
-    const libconfig::Setting &rpc_services = conf.lookup("services");
+    const libconfig::Setting &rpc_services = conf.lookup("rpc_services");
     for(int i = 0; i < rpc_services.getLength(); ++i) {
 
         const libconfig::Setting& service = rpc_services[i];
@@ -198,6 +200,7 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
     if (rpc_request_message.header_.opcode != XtraTask::OpCode::CMD_READ) {
         log_err("invalid opcode %u in service XtraTask.", rpc_request_message.header_.opcode);
         rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);
+        return;
     }
 
     XtraTask::XtraReadOps::Response response;

@@ -32,7 +32,7 @@ bool RpcInstance::validate_request() {
     opcode_ = header.opcode;
 
     std::string msg_str;
-    request_.consume(msg_str, max_msg_size_ - sizeof(RpcRequestHeader));
+    request_.consume(msg_str, msg_size_ - sizeof(RpcRequestHeader));
     if (msg_str.empty()) {
         return false;
     }
