@@ -15,9 +15,8 @@
 #include <RPC/RpcResponseMessage.h>
 
 #include <Client/TcpConnSync.h>
+#include <Client/LogClient.h>
 
-// 异常情况，直接发送到终端上
-#define log_err printf
 
 namespace tzrpc_client {
 

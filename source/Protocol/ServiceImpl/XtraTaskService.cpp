@@ -16,32 +16,40 @@ bool XtraTaskService::init() {
 
     bool init_success = false;
 
-    //todo try-catch protect
-    const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc_services");
-    for(int i = 0; i < rpc_services.getLength(); ++i) {
+    try
+    {
 
-        const libconfig::Setting& service = rpc_services[i];
-        std::string instance_name;
-        ConfUtil::conf_value(service, "instance_name", instance_name);
-        if (instance_name.empty()) {
-            log_err("check service conf, required instance_name not found, skip this one.");
-            continue;
-        }
+        const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc_services");
+        for(int i = 0; i < rpc_services.getLength(); ++i) {
 
-        log_debug("detected instance_name: %s", instance_name.c_str());
-
-        // 发现是匹配的，则找到对应虚拟主机的配置文件了
-        if (instance_name == instance_name_) {
-            if (!handle_rpc_service_conf(service)) {
-                log_err("handle detail conf for %s failed.", instance_name.c_str());
-                return false;
+            const libconfig::Setting& service = rpc_services[i];
+            std::string instance_name;
+            ConfUtil::conf_value(service, "instance_name", instance_name);
+            if (instance_name.empty()) {
+                log_err("check service conf, required instance_name not found, skip this one.");
+                continue;
             }
 
-            log_debug("handle detail conf for host %s success!", instance_name.c_str());
-            // OK
-            init_success = true;
-            break;
+            log_debug("detected instance_name: %s", instance_name.c_str());
+
+            // 发现是匹配的，则找到对应虚拟主机的配置文件了
+            if (instance_name == instance_name_) {
+                if (!handle_rpc_service_conf(service)) {
+                    log_err("handle detail conf for %s failed.", instance_name.c_str());
+                    return false;
+                }
+
+                log_debug("handle detail conf for host %s success!", instance_name.c_str());
+                // OK
+                init_success = true;
+                break;
+            }
         }
+
+    } catch (const libconfig::SettingNotFoundException &nfex) {
+        log_err("rpc_services not found!");
+    } catch (std::exception& e) {
+        log_err("execptions catched for %s",  e.what());
     }
 
     if(!init_success) {
@@ -102,18 +110,26 @@ ExecutorConf XtraTaskService::get_executor_conf() override {
 
 int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override {
 
-    const libconfig::Setting &rpc_services = conf.lookup("rpc_services");
-    for(int i = 0; i < rpc_services.getLength(); ++i) {
+    try
+    {
+        const libconfig::Setting &rpc_services = conf.lookup("rpc_services");
+        for(int i = 0; i < rpc_services.getLength(); ++i) {
 
-        const libconfig::Setting& service = rpc_services[i];
-        std::string instance_name;
-        ConfUtil::conf_value(service, "instance_name", instance_name);
+            const libconfig::Setting& service = rpc_services[i];
+            std::string instance_name;
+            ConfUtil::conf_value(service, "instance_name", instance_name);
 
-        // 发现是匹配的，则找到对应虚拟主机的配置文件了
-        if (instance_name == instance_name_) {
-            log_notice("about to handle_rpc_service_runtime_conf update for %s", instance_name_.c_str());
-            return handle_rpc_service_runtime_conf(service);
+            // 发现是匹配的，则找到对应虚拟主机的配置文件了
+            if (instance_name == instance_name_) {
+                log_notice("about to handle_rpc_service_runtime_conf update for %s", instance_name_.c_str());
+                return handle_rpc_service_runtime_conf(service);
+            }
         }
+
+    } catch (const libconfig::SettingNotFoundException &nfex) {
+        log_err("rpc_services not found!");
+    } catch (std::exception& e) {
+        log_err("execptions catched for %s",  e.what());
     }
 
     log_err("conf for %s not found!!!!", instance_name_.c_str());

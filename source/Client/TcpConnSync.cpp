@@ -10,14 +10,12 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "include/RpcClient.h"
+#include <Client/include/RpcClient.h>
 #include <Client/TcpConnSync.h>
-
-#define log_info printf
-#define log_notice printf
-#define log_err printf
+#include <Client/LogClient.h>
 
 namespace tzrpc_client {
+
 using tzrpc::Header;
 using tzrpc::kHeaderMagic;
 using tzrpc::kHeaderVersion;
