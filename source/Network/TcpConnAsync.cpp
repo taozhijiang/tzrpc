@@ -69,6 +69,7 @@ int TcpConnAsync::parse_header() {
         log_err("message header check error!");
         return -1;
     }
+
     if (server_.max_msg_size() != 0 && recv_bound_.header_.length > server_.max_msg_size()) {
         log_err("max_msg_size %d, but we recv %d",
                 static_cast<int>(server_.max_msg_size()), static_cast<int>(recv_bound_.header_.length));
@@ -154,7 +155,7 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
 
     // need to read again!
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
-        log_err("we expect at least message read: %d, but get %d",
+        log_debug("we expect at least message read: %d, but get %d",
                 static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }

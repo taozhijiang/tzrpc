@@ -36,6 +36,7 @@ enum class RpcResponseStatus : uint8_t {
     INVALID_SERVICE = 3,
 
     INVALID_REQUEST = 4,
+
     SYSTEM_ERROR    = 5,
 };
 

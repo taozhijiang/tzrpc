@@ -73,7 +73,7 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
 
     ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr_->executor_conf_.exec_thread_number_);
     ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr_->executor_conf_.exec_thread_number_hard_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_step_queue_size", conf_ptr_->executor_conf_.exec_thread_step_queue_size_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_step_size", conf_ptr_->executor_conf_.exec_thread_step_size_);
 
     // 检查ExecutorConf参数合法性
     if (conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_) {
@@ -90,9 +90,9 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
         return false;
     }
 
-    if (conf_ptr_->executor_conf_.exec_thread_step_queue_size_ < 0) {
-        log_err("invalid exec_thread_step_queue_size setting: %d",
-                conf_ptr_->executor_conf_.exec_thread_step_queue_size_);
+    if (conf_ptr_->executor_conf_.exec_thread_step_size_ < 0) {
+        log_err("invalid exec_thread_step_size setting: %d",
+                conf_ptr_->executor_conf_.exec_thread_step_size_);
         return false;
     }
 
@@ -147,7 +147,7 @@ bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& 
 
     ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr->executor_conf_.exec_thread_number_);
     ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr->executor_conf_.exec_thread_number_hard_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_step_queue_size", conf_ptr->executor_conf_.exec_thread_step_queue_size_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_step_size", conf_ptr->executor_conf_.exec_thread_step_size_);
 
     // 检查ExecutorConf参数合法性
     if (conf_ptr->executor_conf_.exec_thread_number_hard_ < conf_ptr->executor_conf_.exec_thread_number_) {
@@ -164,9 +164,9 @@ bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& 
         return -1;
     }
 
-    if (conf_ptr->executor_conf_.exec_thread_step_queue_size_ < 0) {
-        log_err("invalid exec_thread_step_queue_size setting: %d",
-                conf_ptr->executor_conf_.exec_thread_step_queue_size_);
+    if (conf_ptr->executor_conf_.exec_thread_step_size_ < 0) {
+        log_err("invalid exec_thread_step_size setting: %d",
+                conf_ptr->executor_conf_.exec_thread_step_size_);
         return -1;
     }
 
