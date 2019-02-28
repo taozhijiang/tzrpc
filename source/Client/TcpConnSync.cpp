@@ -10,14 +10,17 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "include/RpcClient.h"
+#include <Client/include/RpcClient.h>
 #include <Client/TcpConnSync.h>
-
-#define log_info printf
-#define log_notice printf
-#define log_err printf
+#include <Client/LogClient.h>
 
 namespace tzrpc_client {
+
+using tzrpc::Header;
+using tzrpc::kHeaderMagic;
+using tzrpc::kHeaderVersion;
+using tzrpc::kFixedIoBufferSize;
+using tzrpc::ShutdownType;
 
 TcpConnSync::TcpConnSync(std::shared_ptr<ip::tcp::socket> socket,
                          boost::asio::io_service& io_service,
@@ -57,10 +60,15 @@ int TcpConnSync::parse_header() {
     recv_bound_.header_.from_net_endian();
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
-        recv_bound_.header_.version != kHeaderVersion ||
-        recv_bound_.header_.length > client_setting_.max_msg_size_) {
+        recv_bound_.header_.version != kHeaderVersion) {
         log_err("message header check error!");
         log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
+        return -1;
+    }
+
+    if (client_setting_.max_msg_size_ != 0 && recv_bound_.header_.length > client_setting_.max_msg_size_) {
+        log_err("max_msg_size %d, but we recv %d",
+                static_cast<int>(client_setting_.max_msg_size_), static_cast<int>(recv_bound_.header_.length));
         return -1;
     }
 
@@ -69,13 +77,14 @@ int TcpConnSync::parse_header() {
 
 int TcpConnSync::parse_msg_body(Message& msg) {
 
-    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= recv_bound_.header_.length);
-
+    // need to read again!
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
         log_err("we expect at least message read: %d, but get %d",
                 static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
+
+    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= recv_bound_.header_.length);
 
     std::string msg_str;
     recv_bound_.buffer_.consume(msg_str, recv_bound_.header_.length);
@@ -213,12 +222,15 @@ bool TcpConnSync::handle_socket_ec(const boost::system::error_code& ec ) {
     boost::system::error_code ignore_ec;
     bool close_socket = false;
 
-    if (ec == boost::asio::error::eof ||
-        ec == boost::asio::error::connection_reset ||
+    if (ec == boost::asio::error::connection_reset ||
         ec == boost::asio::error::timed_out ||
         ec == boost::asio::error::bad_descriptor )
     {
         log_err("error_code: {%d} %s", ec.value(), ec.message().c_str());
+        close_socket = true;
+    }
+    else if (ec == boost::asio::error::eof)
+    {
         close_socket = true;
     }
     else if (ec == boost::asio::error::operation_aborted)

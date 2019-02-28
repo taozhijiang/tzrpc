@@ -65,9 +65,14 @@ int TcpConnAsync::parse_header() {
     recv_bound_.header_.from_net_endian();
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
-        recv_bound_.header_.version != kHeaderVersion ||
-        recv_bound_.header_.length > server_.max_msg_size()) {
+        recv_bound_.header_.version != kHeaderVersion) {
         log_err("message header check error!");
+        return -1;
+    }
+
+    if (server_.max_msg_size() != 0 && recv_bound_.header_.length > server_.max_msg_size()) {
+        log_err("max_msg_size %d, but we recv %d",
+                static_cast<int>(server_.max_msg_size()), static_cast<int>(recv_bound_.header_.length));
         return -1;
     }
 
@@ -148,13 +153,14 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
 
 int TcpConnAsync::parse_msg_body(Message& msg) {
 
-    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= recv_bound_.header_.length);
-
+    // need to read again!
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
-        log_err("we expect at least message read: %d, but get %d",
+        log_debug("we expect at least message read: %d, but get %d",
                 static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
+
+    SAFE_ASSERT(recv_bound_.buffer_.get_length() >= recv_bound_.header_.length);
 
     std::string msg_str;
     recv_bound_.buffer_.consume(msg_str, recv_bound_.header_.length);
@@ -198,7 +204,7 @@ void TcpConnAsync::do_read_msg() {
             // 转发到RPC请求
             log_debug("read_message: %s", msg.dump().c_str());
             log_debug("read message finished, dispatch for RPC process.");
-            auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this(), server_.max_msg_size());
+            auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this(), msg.payload_.size());
             Dispatcher::instance().handle_RPC(instance);
 
             return do_read(); // read again for future
@@ -239,7 +245,7 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
         // 转发到RPC请求
         log_debug("read_message: %s", msg.dump().c_str());
         log_debug("read message finished, dispatch for RPC process.");
-        auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this(), server_.max_msg_size());
+        auto instance = std::make_shared<RpcInstance>(msg.payload_, shared_from_this(), msg.payload_.size());
         Dispatcher::instance().handle_RPC(instance);
 
         return do_read();
@@ -319,12 +325,15 @@ bool TcpConnAsync::handle_socket_ec(const boost::system::error_code& ec ) {
     boost::system::error_code ignore_ec;
     bool close_socket = false;
 
-    if (ec == boost::asio::error::eof ||
-        ec == boost::asio::error::connection_reset ||
+    if (ec == boost::asio::error::connection_reset ||
         ec == boost::asio::error::timed_out ||
         ec == boost::asio::error::bad_descriptor )
     {
         log_err("error_code: {%d} %s", ec.value(), ec.message().c_str());
+        close_socket = true;
+    }
+    else if (ec == boost::asio::error::eof)
+    {
         close_socket = true;
     }
     else if (ec == boost::asio::error::operation_aborted)

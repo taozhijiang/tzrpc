@@ -15,9 +15,8 @@
 #include <RPC/RpcResponseMessage.h>
 
 #include <Client/TcpConnSync.h>
+#include <Client/LogClient.h>
 
-// 异常情况，直接发送到终端上
-#define log_err printf
 
 namespace tzrpc_client {
 
@@ -103,12 +102,14 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
 
     // 发送请求报文
     if(!send_rpc_message(rpc_request_message)){
+        conn_.reset();
         return RpcClientStatus::NETWORK_SEND_ERROR;
     }
 
     // 接收报文
     Message net_message;
     if(!recv_rpc_message(net_message)){
+        conn_.reset();
         return RpcClientStatus::NETWORK_RECV_ERROR;
     }
 
@@ -150,7 +151,7 @@ RpcClient::RpcClient(const std::string& addr_ip, uint16_t addr_port):
 
     client_setting_.addr_ip_ = addr_ip;
     client_setting_.addr_port_ = addr_port;
-    client_setting_.max_msg_size_ = 4096;
+    client_setting_.max_msg_size_ = 0;
     client_setting_.client_ops_cancel_time_out_ = 20;
 
     impl_.reset(new RpcClientImpl(client_setting_));

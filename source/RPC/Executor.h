@@ -31,8 +31,7 @@ public:
         service_impl_(service_impl),
         rpc_queue_(),
         conf_lock_(),
-        conf_({}),
-        threads_adjust_timer_() {
+        conf_({}) {
     }
 
     void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) override {
@@ -93,7 +92,6 @@ public:
 
 private:
     // 根据rpc_queue_自动伸缩线程负载
-    std::unique_ptr<steady_timer> threads_adjust_timer_;
     void executor_threads_adjust(const boost::system::error_code& ec);
 };
 

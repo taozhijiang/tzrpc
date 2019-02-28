@@ -15,31 +15,41 @@ bool XtraTaskService::init() {
     }
 
     bool init_success = false;
-    const libconfig::Setting &rpc_services = conf_ptr->lookup("services");
-    for(int i = 0; i < rpc_services.getLength(); ++i) {
 
-        const libconfig::Setting& service = rpc_services[i];
-        std::string instance_name;
-        ConfUtil::conf_value(service, "instance_name", instance_name);
-        if (instance_name.empty()) {
-            log_err("check service conf, required instance_name not found, skip this one.");
-            continue;
-        }
+    try
+    {
 
-        log_debug("detected instance_name: %s", instance_name.c_str());
+        const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc_services");
+        for(int i = 0; i < rpc_services.getLength(); ++i) {
 
-        // 发现是匹配的，则找到对应虚拟主机的配置文件了
-        if (instance_name == instance_name_) {
-            if (!handle_rpc_service_conf(service)) {
-                log_err("handle detail conf for %s failed.", instance_name.c_str());
-                return false;
+            const libconfig::Setting& service = rpc_services[i];
+            std::string instance_name;
+            ConfUtil::conf_value(service, "instance_name", instance_name);
+            if (instance_name.empty()) {
+                log_err("check service conf, required instance_name not found, skip this one.");
+                continue;
             }
 
-            log_debug("handle detail conf for host %s success!", instance_name.c_str());
-            // OK
-            init_success = true;
-            break;
+            log_debug("detected instance_name: %s", instance_name.c_str());
+
+            // 发现是匹配的，则找到对应虚拟主机的配置文件了
+            if (instance_name == instance_name_) {
+                if (!handle_rpc_service_conf(service)) {
+                    log_err("handle detail conf for %s failed.", instance_name.c_str());
+                    return false;
+                }
+
+                log_debug("handle detail conf for host %s success!", instance_name.c_str());
+                // OK
+                init_success = true;
+                break;
+            }
         }
+
+    } catch (const libconfig::SettingNotFoundException &nfex) {
+        log_err("rpc_services not found!");
+    } catch (std::exception& e) {
+        log_err("execptions catched for %s",  e.what());
     }
 
     if(!init_success) {
@@ -63,7 +73,7 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
 
     ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr_->executor_conf_.exec_thread_number_);
     ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr_->executor_conf_.exec_thread_number_hard_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_step_queue_size", conf_ptr_->executor_conf_.exec_thread_step_queue_size_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_step_size", conf_ptr_->executor_conf_.exec_thread_step_size_);
 
     // 检查ExecutorConf参数合法性
     if (conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_) {
@@ -80,9 +90,9 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
         return false;
     }
 
-    if (conf_ptr_->executor_conf_.exec_thread_step_queue_size_ < 0) {
-        log_err("invalid exec_thread_step_queue_size setting: %d",
-                conf_ptr_->executor_conf_.exec_thread_step_queue_size_);
+    if (conf_ptr_->executor_conf_.exec_thread_step_size_ < 0) {
+        log_err("invalid exec_thread_step_size setting: %d",
+                conf_ptr_->executor_conf_.exec_thread_step_size_);
         return false;
     }
 
@@ -100,18 +110,26 @@ ExecutorConf XtraTaskService::get_executor_conf() override {
 
 int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override {
 
-    const libconfig::Setting &rpc_services = conf.lookup("services");
-    for(int i = 0; i < rpc_services.getLength(); ++i) {
+    try
+    {
+        const libconfig::Setting &rpc_services = conf.lookup("rpc_services");
+        for(int i = 0; i < rpc_services.getLength(); ++i) {
 
-        const libconfig::Setting& service = rpc_services[i];
-        std::string instance_name;
-        ConfUtil::conf_value(service, "instance_name", instance_name);
+            const libconfig::Setting& service = rpc_services[i];
+            std::string instance_name;
+            ConfUtil::conf_value(service, "instance_name", instance_name);
 
-        // 发现是匹配的，则找到对应虚拟主机的配置文件了
-        if (instance_name == instance_name_) {
-            log_notice("about to handle_rpc_service_runtime_conf update for %s", instance_name_.c_str());
-            return handle_rpc_service_runtime_conf(service);
+            // 发现是匹配的，则找到对应虚拟主机的配置文件了
+            if (instance_name == instance_name_) {
+                log_notice("about to handle_rpc_service_runtime_conf update for %s", instance_name_.c_str());
+                return handle_rpc_service_runtime_conf(service);
+            }
         }
+
+    } catch (const libconfig::SettingNotFoundException &nfex) {
+        log_err("rpc_services not found!");
+    } catch (std::exception& e) {
+        log_err("execptions catched for %s",  e.what());
     }
 
     log_err("conf for %s not found!!!!", instance_name_.c_str());
@@ -129,7 +147,7 @@ bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& 
 
     ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr->executor_conf_.exec_thread_number_);
     ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr->executor_conf_.exec_thread_number_hard_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_step_queue_size", conf_ptr->executor_conf_.exec_thread_step_queue_size_);
+    ConfUtil::conf_value(setting, "exec_thread_pool_step_size", conf_ptr->executor_conf_.exec_thread_step_size_);
 
     // 检查ExecutorConf参数合法性
     if (conf_ptr->executor_conf_.exec_thread_number_hard_ < conf_ptr->executor_conf_.exec_thread_number_) {
@@ -146,9 +164,9 @@ bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& 
         return -1;
     }
 
-    if (conf_ptr->executor_conf_.exec_thread_step_queue_size_ < 0) {
-        log_err("invalid exec_thread_step_queue_size setting: %d",
-                conf_ptr->executor_conf_.exec_thread_step_queue_size_);
+    if (conf_ptr->executor_conf_.exec_thread_step_size_ < 0) {
+        log_err("invalid exec_thread_step_size setting: %d",
+                conf_ptr->executor_conf_.exec_thread_step_size_);
         return -1;
     }
 
@@ -198,6 +216,7 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
     if (rpc_request_message.header_.opcode != XtraTask::OpCode::CMD_READ) {
         log_err("invalid opcode %u in service XtraTask.", rpc_request_message.header_.opcode);
         rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);
+        return;
     }
 
     XtraTask::XtraReadOps::Response response;

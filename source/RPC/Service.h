@@ -26,7 +26,7 @@ class RpcInstance;
 struct ExecutorConf {
     int exec_thread_number_;
     int exec_thread_number_hard_;  // 允许最大的线程数目
-    int exec_thread_step_queue_size_;
+    int exec_thread_step_size_;
 };
 
 

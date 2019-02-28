@@ -11,7 +11,6 @@
 #include <mutex>
 
 #include <boost/noncopyable.hpp>
-#include <boost/atomic/atomic.hpp>
 
 #include <xtra_asio.h>
 
@@ -31,6 +30,15 @@ class NetConf {
 
     friend class NetServer;
 
+    int     session_cancel_time_out_;    // session间隔会话时长
+    int     ops_cancel_time_out_;        // ops操作超时时长
+
+    bool    service_enabled_;   // 服务开关
+    int     service_speed_;
+    int     service_token_;
+
+    int     max_msg_size_;       // 如果为0，则不限制
+
 private:
     bool load_conf(std::shared_ptr<libconfig::Config> conf_ptr);
     bool load_conf(const libconfig::Config& conf);
@@ -44,18 +52,9 @@ private:
     int io_thread_number_;
 
     // 加载、更新配置的时候保护竞争状态
-    // 这里保护主要是非atomic的原子结构
+    // 这里保护主要是非atomic操作的string结构
     std::mutex             lock_;
 
-    boost::atomic<int>     session_cancel_time_out_;    // session间隔会话时长
-    boost::atomic<int>     ops_cancel_time_out_;        // ops操作超时时长
-
-    boost::atomic<bool>    service_enabled_;   // 服务开关
-    boost::atomic<int64_t> service_speed_;
-
-    boost::atomic<int64_t> service_token_;
-
-    boost::atomic<int>     max_msg_size_;
 
     bool check_safe_ip(const std::string& ip) {
         std::lock_guard<std::mutex> lock(lock_);
@@ -91,13 +90,13 @@ private:
     }
 
     void feed_service_token(){
-        service_token_ = service_speed_.load();
+        service_token_ = service_speed_;
     }
 
     std::shared_ptr<steady_timer> timed_feed_token_;
     void timed_feed_token_handler(const boost::system::error_code& ec);
 
-};  // end class NetConf
+} __attribute__ ((aligned (4)));  // end class NetConf
 
 class NetServer: public boost::noncopyable {
 
