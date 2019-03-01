@@ -16,11 +16,15 @@
 namespace tzrpc_client {
 
 struct RpcClientSetting {
+
     std::string addr_ip_;
     uint16_t    addr_port_;
+
     uint32_t    max_msg_size_;
-    uint32_t    client_ops_cancel_time_out_;
-};
+
+    uint32_t    ops_cancel_time_out_;
+
+} __attribute__ ((aligned (4)));
 
 // class forward
 class RpcClientImpl;
@@ -35,6 +39,11 @@ public:
 
     RpcClientStatus call_RPC(uint16_t service_id, uint16_t opcode,
                              const std::string& payload, std::string& respload);
+
+    // 带客户端超时
+    RpcClientStatus call_RPC(uint16_t service_id, uint16_t opcode,
+                             const std::string& payload, std::string& respload,
+                             uint32_t timeout_sec);
 
 private:
     RpcClientSetting client_setting_;

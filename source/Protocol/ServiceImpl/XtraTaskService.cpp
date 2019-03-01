@@ -247,6 +247,11 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
             std::string real_msg = request.echo().msg();
             log_debug("XtraTask::XtraReadOps::echo -> %s", real_msg.c_str());
             response.mutable_echo()->set_msg("echo:" + real_msg);
+        } else if (request.has_test_timeout()) {
+            int32_t timeout = request.test_timeout().timeout();
+            log_debug("this thread will sleep for %d sec.", timeout);
+            boost::this_thead::sleepfor(timeout);
+            response.mutable_test_timeout()->set_timeout("you should not see this.");
         } else {
             log_err("undetected specified service call.");
             rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);

@@ -36,7 +36,9 @@ static boost::asio::io_service IO_SERVICE;
 class RpcClientImpl {
 public:
     RpcClientImpl(const RpcClientSetting& client_setting):
-        client_setting_(client_setting) {
+        client_setting_(client_setting),
+        was_timeout_(false),
+        rpc_call_timer_() {
     }
 
     ~RpcClientImpl() {
@@ -51,7 +53,8 @@ public:
     }
 
     RpcClientStatus call_RPC(uint16_t service_id, uint16_t opcode,
-                             const std::string& payload, std::string& respload);
+                             const std::string& payload, std::string& respload,
+                             uint32_t timeout_sec);
 
 private:
     bool send_rpc_message(const RpcRequestMessage& rpc_request_message) {
@@ -63,16 +66,53 @@ private:
         return conn_->recv_net_message(net_message);
     }
 
-    time_t start_;        // 请求创建的时间
     RpcClientSetting client_setting_;
+
+    time_t start_;        // 请求创建的时间
+    bool was_timeout_;
+    std::unique_ptr<steady_timer> rpc_call_timer_;
+    void set_rpc_call_timeout(uint32_t msec);
+    void rpc_call_timeout(const boost::system::error_code& ec);
 
     std::shared_ptr<TcpConnSync> conn_;
 };
 
+void RpcClientImpl::set_rpc_call_timeout(uint32_t sec) {
+
+    if (sec == 0) {
+        return;
+    }
+
+    boost::system::error_code ignore_ec;
+    if (rpc_call_timer_) {
+        rpc_call_timer_->cancel(ignore_ec);
+    } else {
+        rpc_call_timer_.reset(new steady_timer(io_service_));
+    }
+
+    SAFE_ASSERT( sec > 0 );
+    was_timeout_ = false;
+    rpc_call_timer_->expires_from_now(boost::chrono::seconds(sec));
+    rpc_call_timer_->async_wait(std::bind(&RpcClientImpl::rpc_call_timeout, shared_from_this(),
+                                           std::placeholders::_1));
+}
+
+void RpcClientImpl::rpc_call_timeout(const boost::system::error_code& ec) {
+
+    if (ec == 0){
+        log_info("rpc_call_timeout called, call start at %lu", start_);
+        was_timeout_ = true;
+        conn_->ops_cancel();
+    } else if ( ec == boost::asio::error::operation_aborted) {
+        // normal cancel
+    } else {
+        log_err("unknown and won't handle error_code: {%d} %s", ec.value(), ec.message().c_str());
+    }
+}
 
 RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
-                                    const std::string& payload, std::string& respload) {
-
+                                        const std::string& payload, std::string& respload,
+                                        uint32_t timeout_sec) {
     if (!conn_) {
 
         boost::system::error_code ec;
@@ -100,9 +140,17 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
     // 构建请求包
     RpcRequestMessage rpc_request_message(service_id, opcode, payload);
 
+    if (timeout_sec > 0) {
+        set_rpc_call_timeout(timeout_sec);
+    }
+
     // 发送请求报文
     if(!send_rpc_message(rpc_request_message)){
         conn_.reset();
+        if (was_timeout_) {
+            log_err("rpc_call was timeout with %d sec, start before %lu", timeout_sec, (::time(NULL) - start_));
+            return RpcClientStatus::RPC_CALL_TIMEOUT;
+        }
         return RpcClientStatus::NETWORK_SEND_ERROR;
     }
 
@@ -110,6 +158,10 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
     Message net_message;
     if(!recv_rpc_message(net_message)){
         conn_.reset();
+        if (was_timeout_) {
+            log_err("rpc_call was timeout with %d sec, start before %lu", timeout_sec, (::time(NULL) - start_));
+            return RpcClientStatus::RPC_CALL_TIMEOUT;
+        }
         return RpcClientStatus::NETWORK_RECV_ERROR;
     }
 
@@ -161,12 +213,24 @@ RpcClient::~RpcClient() {}
 
 
 RpcClientStatus RpcClient::call_RPC(uint16_t service_id, uint16_t opcode,
-                                    const std::string& payload, std::string& respload) {
+                                    const std::string& payload, std::string& respload ) {
     if (!impl_) {
+        log_err("RpcClientImpl not initialized, please check.");
         return RpcClientStatus::NETWORK_BEFORE_ERROR;
     }
 
-    return impl_->call_RPC(service_id, opcode, payload, respload);
+    return impl_->call_RPC(service_id, opcode, 0, payload, respload);
+}
+
+RpcClientStatus RpcClient::call_RPC(uint16_t service_id, uint16_t opcode,
+                                    const std::string& payload, std::string& respload,
+                                    uint32_t timeout_sec) {
+    if (!impl_) {
+        log_err("RpcClientImpl not initialized, please check.");
+        return RpcClientStatus::NETWORK_BEFORE_ERROR;
+    }
+
+    return impl_->call_RPC(service_id, opcode, 0, payload, respload);
 }
 
 } // end namespace tzrpc_client

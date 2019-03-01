@@ -76,7 +76,7 @@ exec_program( "export BUILD_VAR=`git log -1 --pretty=%H` && echo 'const char *bu
 exec_program( "export BUILD_VAR=`git symbolic-ref HEAD` && echo 'const char *build_commit_branch = \"VCS: Branch:' $BUILD_VAR '\";' >> build_version.cpp ")
 exec_program( "export BUILD_VAR=`git log -1 --pretty=%cd` && echo 'const char *build_commit_date = \"VCS: Date:' $BUILD_VAR '\";' >> build_version.cpp ")
 exec_program( "export BUILD_VAR=`git log -1 --pretty=\"%an %ae\"` && echo 'const char *build_commit_author = \"VCS: Author:' $BUILD_VAR '\";' >> build_version.cpp ")
-exec_program( "export BUILD_VAR=`date` && echo 'const char *build_time = \"Build At:' $BUILD_VAR '\";' >> build_version.cpp ")
+exec_program( "export BUILD_VAR=`date +%F` && echo 'const char *build_time = \"Build At:' $BUILD_VAR '\";' >> build_version.cpp ")
 
 add_executable( tzrpc main.cpp build_version.cpp ${DIR_SRCS} )
 
