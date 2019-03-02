@@ -16,15 +16,17 @@ bool XtraTaskService::init() {
 
     bool init_success = false;
 
-    try
-    {
+    try {
 
         const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc.services");
+
         for(int i = 0; i < rpc_services.getLength(); ++i) {
 
             const libconfig::Setting& service = rpc_services[i];
+
+            // 跳过没有配置instance_name的配置
             std::string instance_name;
-            ConfUtil::conf_value(service, "instance_name", instance_name);
+            service.lookupValue("instance_name", instance_name);
             if (instance_name.empty()) {
                 log_err("check service conf, required instance_name not found, skip this one.");
                 continue;
@@ -35,12 +37,12 @@ bool XtraTaskService::init() {
             // 发现是匹配的，则找到对应虚拟主机的配置文件了
             if (instance_name == instance_name_) {
                 if (!handle_rpc_service_conf(service)) {
-                    log_err("handle detail conf for %s failed.", instance_name.c_str());
+                    log_err("handle detail conf for instnace %s failed.", instance_name.c_str());
                     return false;
                 }
 
-                log_debug("handle detail conf for host %s success!", instance_name.c_str());
-                // OK
+                // OK, we will return
+                log_debug("handle detail conf for instance %s success!", instance_name.c_str());
                 init_success = true;
                 break;
             }
@@ -53,8 +55,9 @@ bool XtraTaskService::init() {
     }
 
     if(!init_success) {
-        log_err("host %s init failed, may not configure for it?", instance_name_.c_str());
+        log_err("instance %s init failed, may not configure for it?", instance_name_.c_str());
     }
+
     return init_success;
 }
 
@@ -71,9 +74,9 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
         }
     }
 
-    ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr_->executor_conf_.exec_thread_number_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr_->executor_conf_.exec_thread_number_hard_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_step_size", conf_ptr_->executor_conf_.exec_thread_step_size_);
+    setting.lookupValue("exec_thread_pool_size", conf_ptr_->executor_conf_.exec_thread_number_);
+    setting.lookupValue("exec_thread_pool_size_hard", conf_ptr_->executor_conf_.exec_thread_number_hard_);
+    setting.lookupValue("exec_thread_pool_step_size", conf_ptr_->executor_conf_.exec_thread_step_size_);
 
     // 检查ExecutorConf参数合法性
     if (conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_) {
@@ -85,18 +88,20 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
         conf_ptr_->executor_conf_.exec_thread_number_hard_ > 100 ||
         conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_ )
     {
-        log_err("invalid exec_thread_pool_size setting: %d, %d",
-                conf_ptr_->executor_conf_.exec_thread_number_, conf_ptr_->executor_conf_.exec_thread_number_hard_);
+        log_err("invalid exec_thread setting: %d, %d",
+                conf_ptr_->executor_conf_.exec_thread_number_,
+                conf_ptr_->executor_conf_.exec_thread_number_hard_);
         return false;
     }
 
+    // 可以为0，表示不进行动态更新
     if (conf_ptr_->executor_conf_.exec_thread_step_size_ < 0) {
         log_err("invalid exec_thread_step_size setting: %d",
                 conf_ptr_->executor_conf_.exec_thread_step_size_);
         return false;
     }
 
-    // other confs may handle here...
+    // other conf handle may add code here...
 
     return true;
 }
@@ -110,14 +115,15 @@ ExecutorConf XtraTaskService::get_executor_conf() override {
 
 int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override {
 
-    try
-    {
+    try {
+
         const libconfig::Setting &rpc_services = conf.lookup("rpc_services");
+
         for(int i = 0; i < rpc_services.getLength(); ++i) {
 
             const libconfig::Setting& service = rpc_services[i];
             std::string instance_name;
-            ConfUtil::conf_value(service, "instance_name", instance_name);
+            service.lookupValue("instance_name", instance_name);
 
             // 发现是匹配的，则找到对应虚拟主机的配置文件了
             if (instance_name == instance_name_) {
@@ -132,7 +138,7 @@ int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override
         log_err("execptions catched for %s",  e.what());
     }
 
-    log_err("conf for %s not found!!!!", instance_name_.c_str());
+    log_err("conf for instance %s not found!!!!", instance_name_.c_str());
     return -1;
 }
 
@@ -145,9 +151,9 @@ bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& 
         return -1;
     }
 
-    ConfUtil::conf_value(setting, "exec_thread_pool_size", conf_ptr->executor_conf_.exec_thread_number_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_size_hard", conf_ptr->executor_conf_.exec_thread_number_hard_);
-    ConfUtil::conf_value(setting, "exec_thread_pool_step_size", conf_ptr->executor_conf_.exec_thread_step_size_);
+    setting.lookupValue("exec_thread_pool_size", conf_ptr->executor_conf_.exec_thread_number_);
+    setting.lookupValue("exec_thread_pool_size_hard", conf_ptr->executor_conf_.exec_thread_number_hard_);
+    setting.lookupValue("exec_thread_pool_step_size", conf_ptr->executor_conf_.exec_thread_step_size_);
 
     // 检查ExecutorConf参数合法性
     if (conf_ptr->executor_conf_.exec_thread_number_hard_ < conf_ptr->executor_conf_.exec_thread_number_) {

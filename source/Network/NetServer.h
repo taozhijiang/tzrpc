@@ -8,13 +8,10 @@
 #ifndef __NETWORK_NET_SERVER_H__
 #define __NETWORK_NET_SERVER_H__
 
-#include <mutex>
-
-#include <boost/noncopyable.hpp>
-
 #include <xtra_asio.h>
 
-
+#include <mutex>
+#include <boost/noncopyable.hpp>
 #include <libconfig.h++>
 
 #include <Utils/Log.h>
@@ -30,31 +27,32 @@ class NetConf {
 
     friend class NetServer;
 
-    int     session_cancel_time_out_;    // session间隔会话时长
-    int     ops_cancel_time_out_;        // ops操作超时时长
-
-    bool    service_enabled_;   // 服务开关
-    int     service_speed_;
-    int     service_token_;
-
-    int     max_msg_size_;       // 如果为0，则不限制
-
 private:
-    bool load_conf(std::shared_ptr<libconfig::Config> conf_ptr);
-    bool load_conf(const libconfig::Config& conf);
 
-private:
+    bool        service_enabled_;   // 服务开关
+    int32_t     service_speed_;
+    int32_t     service_token_;
+
+    int32_t     session_cancel_time_out_;   // session间隔会话时长
+    int32_t     ops_cancel_time_out_;       // ops操作超时时长
+
+    int32_t     send_max_msg_size_;         // 如果为0，则不限制
+    int32_t     recv_max_msg_size_;         // 如果为0，则不限制
+
     std::string bind_addr_;
-    unsigned short listen_port_;
-    std::set<std::string> safe_ip_;
-
-    int backlog_size_;
-    int io_thread_number_;
+    int32_t     bind_port_;
 
     // 加载、更新配置的时候保护竞争状态
     // 这里保护主要是非atomic操作的string结构
-    std::mutex             lock_;
+    // 其他的数据结构都是4字节对其的，intel确保能够原子读取和更新
+    std::mutex  lock_;
+    std::set<std::string> safe_ip_;
 
+    int32_t     backlog_size_;
+    int32_t     io_thread_number_;
+
+    bool load_conf(std::shared_ptr<libconfig::Config> conf_ptr);
+    bool load_conf(const libconfig::Config& conf);
 
     bool check_safe_ip(const std::string& ip) {
         std::lock_guard<std::mutex> lock(lock_);
@@ -68,7 +66,7 @@ private:
         // 此时如果需要变更除非重启服务，或者采用非web方式(比如发送命令)来恢复配置
 
         if (!service_enabled_) {
-            log_alert("service not enabled ...");
+            log_debug("service not enabled ...");
             return false;
         }
 
@@ -77,7 +75,7 @@ private:
             return true;
 
         if (service_token_ <= 0) {
-            log_alert("service not speed over ...");
+            log_debug("service not speed over ...");
             return false;
         }
 
@@ -95,6 +93,24 @@ private:
 
     std::shared_ptr<steady_timer> timed_feed_token_;
     void timed_feed_token_handler(const boost::system::error_code& ec);
+
+    // 良好的默认初始化值
+
+    NetConf():
+        service_enabled_(true),
+        service_speed_(0),
+        service_token_(0),
+        session_cancel_time_out_(0),
+        ops_cancel_time_out_(0),
+        send_max_msg_size_(0),
+        recv_max_msg_size_(0),
+        bind_addr_(),
+        bind_port_(0),
+        lock_(),
+        safe_ip_(),
+        backlog_size_(10),
+        io_thread_number_(1) {
+    }
 
 } __attribute__ ((aligned (4)));  // end class NetConf
 
@@ -141,10 +157,13 @@ public:
         return conf_.session_cancel_time_out_;
     }
 
-    int max_msg_size() const {
-        return conf_.max_msg_size_;
+    int send_max_msg_size() const {
+        return conf_.send_max_msg_size_;
     }
 
+    int recv_max_msg_size() const {
+        return conf_.recv_max_msg_size_;
+    }
 private:
 
     // accept stuffs

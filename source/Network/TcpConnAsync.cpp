@@ -70,9 +70,10 @@ int TcpConnAsync::parse_header() {
         return -1;
     }
 
-    if (server_.max_msg_size() != 0 && recv_bound_.header_.length > server_.max_msg_size()) {
-        log_err("max_msg_size %d, but we recv %d",
-                static_cast<int>(server_.max_msg_size()), static_cast<int>(recv_bound_.header_.length));
+    if (server_.recv_max_msg_size() != 0 &&
+        recv_bound_.header_.length > server_.recv_max_msg_size()) {
+        log_err("send_max_msg_size %d, but we will recv %d",
+                static_cast<int>(server_.recv_max_msg_size()), static_cast<int>(recv_bound_.header_.length));
         return -1;
     }
 
@@ -261,6 +262,21 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
         return;
 
     }
+}
+
+int TcpConnAsync::async_send_message(const Message& msg) {
+
+    if (server_.send_max_msg_size() != 0 &&
+        msg.header_.length > server_.send_max_msg_size()) {
+        log_err("send_max_msg_size %d, but we will send %d",
+                static_cast<int>(server_.send_max_msg_size()), static_cast<int>(msg.header_.length));
+        return -1;
+    }
+
+    send_bound_.buffer_.append(msg);
+    do_write();
+
+    return 0;
 }
 
 

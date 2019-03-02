@@ -33,9 +33,8 @@ TEST(ClientSmokeTest, ClientConnTest) {
 
     std::string addr_ip;
     int         bind_port;
-    ConfUtil::conf_value(*conf_ptr, "rpc.client.serv_addr", addr_ip);
-    ConfUtil::conf_value(*conf_ptr, "rpc.client.serv_port", bind_port);
-
+    conf_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
+    conf_ptr->lookupValue("rpc.client.serv_port", bind_port);
 
     std::string msg_str("nicol, taoz from test");
 
@@ -91,8 +90,8 @@ TEST(ClientSmokeTest, RpcClientTest) {
 
     std::string addr_ip;
     int         bind_port;
-    ConfUtil::conf_value(*conf_ptr, "rpc.client.serv_addr", addr_ip);
-    ConfUtil::conf_value(*conf_ptr, "rpc.client.serv_port", bind_port);
+    conf_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
+    conf_ptr->lookupValue("rpc.client.serv_port", bind_port);
 
 
     std::string msg_str("nicol, taoz from test rpc");

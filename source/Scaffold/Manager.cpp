@@ -14,7 +14,6 @@
 
 #include <Network/NetServer.h>
 
-#include <Utils/StrUtil.h>
 #include <Utils/Utils.h>
 #include <Utils/Log.h>
 #include <Utils/Timer.h>
@@ -63,7 +62,7 @@ bool Manager::init(const std::string& cfgFile) {
     }
 
     int log_level = 0;
-    ConfUtil::conf_value(*conf_ptr, "log_level", log_level);
+    conf_ptr->lookupValue("log_level", log_level);
     if (log_level <= 0 || log_level > 7) {
         log_notice("invalid log_level value, reset to default 7.");
         log_level = 7;

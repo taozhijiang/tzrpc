@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     }
 
     int log_level = 0;
-    ConfUtil::conf_value(*conf_ptr, "log_level", log_level);
+    conf_ptr->lookupValue("log_level", log_level);
     if (log_level <= 0 || log_level > 7) {
         return -1;
     }

@@ -35,10 +35,7 @@ public:
     virtual void start();
     void stop();
 
-    void async_send_message(const Message& msg) {
-        send_bound_.buffer_.append(msg);
-        do_write();
-    }
+    int async_send_message(const Message& msg);
 
 private:
 

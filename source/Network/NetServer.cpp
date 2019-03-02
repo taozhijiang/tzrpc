@@ -23,18 +23,16 @@ bool NetConf::load_conf(std::shared_ptr<libconfig::Config> conf_ptr) {
 
 bool NetConf::load_conf(const libconfig::Config& conf) {
 
-    int listen_port = 0;
-    ConfUtil::conf_value(conf, "rpc.network.bind_addr", bind_addr_);
-    ConfUtil::conf_value(conf, "rpc.network.bind_port", listen_port);
-    if (bind_addr_.empty() || listen_port <=0 ){
-        log_err( "invalid rpc_network.serv_addr %s & http.serv_port %d",
-                  bind_addr_.c_str(), listen_port);
+    conf.lookupValue("rpc.network.bind_addr", bind_addr_);
+    conf.lookupValue("rpc.network.bind_port", bind_port_);
+    if (bind_addr_.empty() || bind_port_ <=0 ){
+        log_err( "invalid rpc.network. bind_addr %s & bind_port %d",
+                  bind_addr_.c_str(), bind_port_);
         return false;
     }
-    listen_port_ = static_cast<unsigned short>(listen_port);
 
     std::string ip_list;
-    ConfUtil::conf_value(conf, "rpc.network.safe_ip", ip_list);
+    conf.lookupValue("rpc.network.safe_ip", ip_list);
     if (!ip_list.empty()) {
         std::vector<std::string> ip_vec;
         std::set<std::string> ip_set;
@@ -49,60 +47,57 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
 
         std::swap(ip_set, safe_ip_);
     }
+
     if (!safe_ip_.empty()) {
         log_alert("safe_ip not empty, totally contain %d items",
-                          static_cast<int>(safe_ip_.size()));
+                  static_cast<int>(safe_ip_.size()));
     }
 
-    ConfUtil::conf_value(conf, "rpc.network.backlog_size", backlog_size_);
+    conf.lookupValue("rpc.network.backlog_size", backlog_size_);
     if (backlog_size_ < 0) {
         log_err( "invalid rpc.network.backlog_size %d.", backlog_size_);
         return false;
     }
 
-    ConfUtil::conf_value(conf, "rpc.network.io_thread_pool_size", io_thread_number_);
+    conf.lookupValue("rpc.network.io_thread_pool_size", io_thread_number_);
     if (io_thread_number_ < 0) {
         log_err( "invalid rpc.network.io_thread_number %d", io_thread_number_);
         return false;
     }
 
-    // other http parameters
-    int value_i;
-
-    ConfUtil::conf_value(conf, "rpc.network.ops_cancel_time_out", value_i);
-    if (value_i < 0){
-        log_err("invalid rpc.network.ops_cancel_time_out value.");
+    conf.lookupValue("rpc.network.ops_cancel_time_out", ops_cancel_time_out_);
+    if (ops_cancel_time_out_ < 0){
+        log_err("invalid rpc.network.ops_cancel_time_out %d.", ops_cancel_time_out_);
         return false;
     }
-    ops_cancel_time_out_ = value_i;
 
-    ConfUtil::conf_value(conf, "rpc.network.session_cancel_time_out", value_i);
-    if (value_i < 0){
-        log_err("invalid rpc.network.session_cancel_time_out value.");
+    conf.lookupValue("rpc.network.session_cancel_time_out", session_cancel_time_out_);
+    if (session_cancel_time_out_ < 0){
+        log_err("invalid rpc.network.session_cancel_time_out %d.", session_cancel_time_out_);
         return false;
     }
-    session_cancel_time_out_ = value_i;
 
     bool value_b;
-    ConfUtil::conf_value(conf, "rpc.network.service_enable", value_b, true);
-    ConfUtil::conf_value(conf, "rpc.network.service_speed", value_i);
-    if (value_i < 0){
-        log_err("invalid rpc.network.service_speed value %d.", value_i);
+    conf.lookupValue("rpc.network.service_enable", service_enabled_);
+    conf.lookupValue("rpc.network.service_speed", service_speed_);
+    if (service_speed_ < 0){
+        log_err("invalid rpc.network.service_speed value %d.", service_speed_);
         return false;
     }
-    service_enabled_ = value_b;
-    service_speed_ = value_i;
 
     // 如果是0，就不限制
-    ConfUtil::conf_value(conf, "rpc.network.send_max_msg_size", value_i);
-    if (value_i != 0 && value_i <= 32 /*actual sizeof RpcRequestMessage, RpcResponseMessage*/){
-        log_err("invalid rpc_network.max_msg_size value.");
+    conf.lookupValue("rpc.network.send_max_msg_size", send_max_msg_size_);
+    conf.lookupValue("rpc.network.recv_max_msg_size", recv_max_msg_size_);
+    /*actual sizeof RpcRequestMessage, RpcResponseMessage*/
+    if ( (send_max_msg_size_!= 0 && send_max_msg_size_ <= 32 ) ||
+         (recv_max_msg_size_!= 0 && recv_max_msg_size_ <= 32 ) )
+    {
+        log_err("invalid rpc_network.send,recv max_msg_size %d, %d.",
+                send_max_msg_size_, recv_max_msg_size_);
         return false;
     }
-    max_msg_size_ = value_i;
 
     log_debug("NetConf parse conf OK!");
-
     return true;
 }
 
@@ -135,9 +130,10 @@ bool NetServer::init() {
         return false;
     }
 
-    ep_ = ip::tcp::endpoint(ip::address::from_string(conf_.bind_addr_), conf_.listen_port_);
+    // 上面的conf_参数已经经过合法性的检验了
+    ep_ = ip::tcp::endpoint(ip::address::from_string(conf_.bind_addr_), conf_.bind_port_);
     log_alert("create listen endpoint for %s:%d",
-                      conf_.bind_addr_.c_str(), conf_.listen_port_);
+                      conf_.bind_addr_.c_str(), conf_.bind_port_);
 
     log_debug("socket/session conn cancel time_out: %d secs, enabled: %s",
                       conf_.ops_cancel_time_out_,
@@ -260,7 +256,7 @@ int NetServer::module_status(std::string& strModule, std::string& strKey, std::s
     std::stringstream ss;
 
     ss << "\t" << "instance_name: " << instance_name_ << std::endl;
-    ss << "\t" << "service_addr: " << conf_.bind_addr_ << "@" << conf_.listen_port_ << std::endl;
+    ss << "\t" << "service_addr: " << conf_.bind_addr_ << "@" << conf_.bind_port_ << std::endl;
     ss << "\t" << "backlog_size: " << conf_.backlog_size_ << std::endl;
     ss << "\t" << "io_thread_pool_size: " << conf_.io_thread_number_ << std::endl;
     ss << "\t" << "safe_ips: " ;
@@ -306,10 +302,9 @@ int NetServer::update_runtime_conf(const libconfig::Config& cfg) {
         conf_.ops_cancel_time_out_ = conf.ops_cancel_time_out_;
     }
 
-
-    log_notice("swap safe_ips...");
-
     {
+        log_notice("swap safe_ips...");
+
         // protect cfg race conditon
         std::lock_guard<std::mutex> lock(conf_.lock_);
         conf_.safe_ip_.swap(conf.safe_ip_);
