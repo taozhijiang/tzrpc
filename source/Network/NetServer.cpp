@@ -24,17 +24,17 @@ bool NetConf::load_conf(std::shared_ptr<libconfig::Config> conf_ptr) {
 bool NetConf::load_conf(const libconfig::Config& conf) {
 
     int listen_port = 0;
-    ConfUtil::conf_value(conf, "rpc_network.bind_addr", bind_addr_);
-    ConfUtil::conf_value(conf, "rpc_network.listen_port", listen_port);
+    ConfUtil::conf_value(conf, "rpc.network.bind_addr", bind_addr_);
+    ConfUtil::conf_value(conf, "rpc.network.bind_port", listen_port);
     if (bind_addr_.empty() || listen_port <=0 ){
-        log_err( "invalid rpc_network.bind_addr %s & http.listen_port %d",
+        log_err( "invalid rpc_network.serv_addr %s & http.serv_port %d",
                   bind_addr_.c_str(), listen_port);
         return false;
     }
     listen_port_ = static_cast<unsigned short>(listen_port);
 
     std::string ip_list;
-    ConfUtil::conf_value(conf, "rpc_network.safe_ip", ip_list);
+    ConfUtil::conf_value(conf, "rpc.network.safe_ip", ip_list);
     if (!ip_list.empty()) {
         std::vector<std::string> ip_vec;
         std::set<std::string> ip_set;
@@ -54,47 +54,47 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
                           static_cast<int>(safe_ip_.size()));
     }
 
-    ConfUtil::conf_value(conf, "rpc_network.backlog_size", backlog_size_);
+    ConfUtil::conf_value(conf, "rpc.network.backlog_size", backlog_size_);
     if (backlog_size_ < 0) {
-        log_err( "invalid rpc_network.backlog_size %d.", backlog_size_);
+        log_err( "invalid rpc.network.backlog_size %d.", backlog_size_);
         return false;
     }
 
-    ConfUtil::conf_value(conf, "rpc_network.io_thread_pool_size", io_thread_number_);
+    ConfUtil::conf_value(conf, "rpc.network.io_thread_pool_size", io_thread_number_);
     if (io_thread_number_ < 0) {
-        log_err( "invalid rpc_network.io_thread_number %d", io_thread_number_);
+        log_err( "invalid rpc.network.io_thread_number %d", io_thread_number_);
         return false;
     }
 
     // other http parameters
     int value_i;
 
-    ConfUtil::conf_value(conf, "rpc_network.ops_cancel_time_out", value_i);
+    ConfUtil::conf_value(conf, "rpc.network.ops_cancel_time_out", value_i);
     if (value_i < 0){
-        log_err("invalid rpc_network.ops_cancel_time_out value.");
+        log_err("invalid rpc.network.ops_cancel_time_out value.");
         return false;
     }
     ops_cancel_time_out_ = value_i;
 
-    ConfUtil::conf_value(conf, "rpc_network.session_cancel_time_out", value_i);
+    ConfUtil::conf_value(conf, "rpc.network.session_cancel_time_out", value_i);
     if (value_i < 0){
-        log_err("invalid rpc_network.session_cancel_time_out value.");
+        log_err("invalid rpc.network.session_cancel_time_out value.");
         return false;
     }
     session_cancel_time_out_ = value_i;
 
     bool value_b;
-    ConfUtil::conf_value(conf, "rpc_network.service_enable", value_b, true);
-    ConfUtil::conf_value(conf, "rpc_network.service_speed", value_i);
+    ConfUtil::conf_value(conf, "rpc.network.service_enable", value_b, true);
+    ConfUtil::conf_value(conf, "rpc.network.service_speed", value_i);
     if (value_i < 0){
-        log_err("invalid rpc_network.service_speed value %d.", value_i);
+        log_err("invalid rpc.network.service_speed value %d.", value_i);
         return false;
     }
     service_enabled_ = value_b;
     service_speed_ = value_i;
 
     // 如果是0，就不限制
-    ConfUtil::conf_value(conf, "rpc_network.max_msg_size", value_i);
+    ConfUtil::conf_value(conf, "rpc.network.send_max_msg_size", value_i);
     if (value_i != 0 && value_i <= 32 /*actual sizeof RpcRequestMessage, RpcResponseMessage*/){
         log_err("invalid rpc_network.max_msg_size value.");
         return false;
@@ -155,7 +155,7 @@ bool NetServer::init() {
                     std::bind(&NetConf::timed_feed_token_handler, &conf_, std::placeholders::_1));
     }
 
-    log_debug("rpc_network service enabled: %s, speed: %ld tps",
+    log_debug("rpc.network service enabled: %s, speed: %ld tps",
               conf_.service_enabled_ ? "true" : "false",
               conf_.service_speed_);
 

@@ -48,7 +48,7 @@ void* perf_run(void* x_void_ptr) {
     while(!start)
         ::usleep(1);
 
-    RpcClient client(setting.addr_ip_, setting.addr_port_);
+    RpcClient client(setting.serv_addr_, setting.serv_port_);
 
     while(!stop) {
 
@@ -107,8 +107,8 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    setting.addr_ip_ = "127.0.0.1";
-    setting.addr_port_ = 8435;
+    setting.serv_addr_ = "127.0.0.1";
+    setting.serv_port_ = 8435;
 
     std::vector<pthread_t> tids( thread_num,  0);
     for(size_t i=0; i<tids.size(); ++i) {

@@ -10,9 +10,10 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <Client/LogClient.h>
+
 #include <Client/include/RpcClient.h>
 #include <Client/TcpConnSync.h>
-#include <Client/LogClient.h>
 
 namespace tzrpc_client {
 
@@ -24,13 +25,10 @@ using tzrpc::ShutdownType;
 
 TcpConnSync::TcpConnSync(std::shared_ptr<ip::tcp::socket> socket,
                          boost::asio::io_service& io_service,
-                         const RpcClientSetting& client_setting):
+                         RpcClientSetting& client_setting):
     NetConn(socket),
     io_service_(io_service),
-    client_setting_(client_setting),
-    was_cancelled_(false),
-    ops_cancel_mutex_(),
-    ops_cancel_timer_() {
+    client_setting_(client_setting) {
 
     set_tcp_nodelay(true);
     set_tcp_nonblocking(false);
@@ -66,9 +64,10 @@ int TcpConnSync::parse_header() {
         return -1;
     }
 
-    if (client_setting_.max_msg_size_ != 0 && recv_bound_.header_.length > client_setting_.max_msg_size_) {
-        log_err("max_msg_size %d, but we recv %d",
-                static_cast<int>(client_setting_.max_msg_size_), static_cast<int>(recv_bound_.header_.length));
+    if (client_setting_.recv_max_msg_size_ != 0 &&
+        recv_bound_.header_.length > client_setting_.recv_max_msg_size_) {
+        log_err("recv_max_msg_size %d, but we recv %d",
+                static_cast<int>(client_setting_.recv_max_msg_size_), static_cast<int>(recv_bound_.header_.length));
         return -1;
     }
 
@@ -105,16 +104,12 @@ bool TcpConnSync::do_read(Message& msg) override {
 
     while (recv_bound_.buffer_.get_length() < sizeof(Header)) {
 
-        set_ops_cancel_timeout();
-
         uint32_t bytes_read = recv_bound_.buffer_.get_length();
         boost::system::error_code ec;
         size_t bytes_transferred
                 = boost::asio::read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
                                     boost::asio::transfer_at_least(sizeof(Header) - bytes_read),
                                     ec );
-
-        revoke_ops_cancel_timeout();
 
         if (ec) {
             handle_socket_ec(ec);
@@ -144,7 +139,6 @@ bool TcpConnSync::do_read_msg(Message& msg) {
 
     while (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
 
-        set_ops_cancel_timeout();
         uint32_t to_read = std::min((uint32_t)(recv_bound_.header_.length - recv_bound_.buffer_.get_length()),
                                     (uint32_t)(kFixedIoBufferSize));
 
@@ -153,8 +147,6 @@ bool TcpConnSync::do_read_msg(Message& msg) {
                 = boost::asio::read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
                                     boost::asio::transfer_at_least(to_read),
                                     ec);
-
-        revoke_ops_cancel_timeout();
 
         if (ec) {
             handle_socket_ec(ec);
@@ -181,11 +173,6 @@ bool TcpConnSync::do_write() override {
         return false;
     }
 
-    if (was_ops_cancelled()) {
-        log_err("socket operation canceled");
-        return false;
-    }
-
     // 循环发送缓冲区中的数据
     while (send_bound_.buffer_.get_length() > 0) {
 
@@ -193,15 +180,12 @@ bool TcpConnSync::do_write() override {
                                      (uint32_t)(kFixedIoBufferSize));
 
         send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
-        set_ops_cancel_timeout();
 
         boost::system::error_code ec;
         size_t bytes_transferred
                 = boost::asio::write(*socket_, buffer(send_bound_.io_block_, to_write),
                                      boost::asio::transfer_exactly(to_write),
                                      ec);
-        revoke_ops_cancel_timeout();
-
         if (ec) {
             handle_socket_ec(ec);
             return false;
@@ -245,64 +229,11 @@ bool TcpConnSync::handle_socket_ec(const boost::system::error_code& ec ) {
     }
 
 
-    if (close_socket || was_ops_cancelled()) {
-        revoke_ops_cancel_timeout();
-        ops_cancel();
+    if (close_socket) {
         sock_shutdown_and_close(ShutdownType::kBoth);
     }
 
     return close_socket;
 }
-
-
-void TcpConnSync::set_ops_cancel_timeout() {
-
-    std::lock_guard<std::mutex> lock(ops_cancel_mutex_);
-
-    if (client_setting_.client_ops_cancel_time_out_  == 0) {
-        SAFE_ASSERT(!ops_cancel_timer_);
-        return;
-    }
-
-    boost::system::error_code ignore_ec;
-    if (ops_cancel_timer_) {
-        ops_cancel_timer_->cancel(ignore_ec);
-    } else {
-        ops_cancel_timer_.reset(new steady_timer(io_service_));
-    }
-
-    SAFE_ASSERT(client_setting_.client_ops_cancel_time_out_ );
-    ops_cancel_timer_->expires_from_now(boost::chrono::seconds(client_setting_.client_ops_cancel_time_out_));
-    ops_cancel_timer_->async_wait(std::bind(&TcpConnSync::ops_cancel_timeout_call, shared_from_this(),
-                                            std::placeholders::_1));
-}
-
-void TcpConnSync::revoke_ops_cancel_timeout() {
-
-    std::lock_guard<std::mutex> lock(ops_cancel_mutex_);
-
-    boost::system::error_code ignore_ec;
-    if (ops_cancel_timer_) {
-        ops_cancel_timer_->cancel(ignore_ec);
-        ops_cancel_timer_.reset();
-    }
-}
-
-void TcpConnSync::ops_cancel_timeout_call(const boost::system::error_code& ec) {
-
-    if (ec == 0){
-        log_info("client_ops_cancel_timeout_call called with timeout: %d",
-                 client_setting_.client_ops_cancel_time_out_ );
-        ops_cancel();
-        sock_shutdown_and_close(ShutdownType::kBoth);
-    } else if ( ec == boost::asio::error::operation_aborted) {
-        // normal cancel
-    } else {
-        log_err("unknown and won't handle error_code: {%d} %s",
-                ec.value(), ec.message().c_str());
-    }
-}
-
-
 
 } // end namespace tzrpc_client

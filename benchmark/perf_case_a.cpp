@@ -51,7 +51,7 @@ void* perf_run(void* x_void_ptr) {
 
         std::string mar_str;
 
-        RpcClient client(setting.addr_ip_, setting.addr_port_);
+        RpcClient client(setting.serv_addr_, setting.serv_port_);
 
         std::string echo_str(generate_random_str());
         tzrpc::XtraTask::XtraReadOps::Request request;
@@ -106,8 +106,8 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    setting.addr_ip_ = "127.0.0.1";
-    setting.addr_port_ = 8435;
+    setting.serv_addr_ = "127.0.0.1";
+    setting.serv_port_ = 8435;
 
 
     std::vector<pthread_t> tids( thread_num,  0);

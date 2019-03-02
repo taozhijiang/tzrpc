@@ -44,7 +44,7 @@ enum class RpcClientStatus: uint8_t {
     NETWORK_SEND_ERROR = 7,
     NETWORK_RECV_ERROR = 8,
 
-    RPC_CALL_TIMEOUT = 9;
+    RPC_CALL_TIMEOUT = 9,
 
     RECV_FORMAT_ERROR = 10,      // 接收的报文解析错误
 

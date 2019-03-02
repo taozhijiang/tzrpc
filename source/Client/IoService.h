@@ -1,0 +1,109 @@
+/*-
+ * Copyright (c) 2018-2019 TAO Zhijiang<taozhijiang@gmail.com>
+ *
+ * Licensed under the BSD-3-Clause license, see LICENSE for full information.
+ *
+ */
+
+#ifndef __IO_SERVICE_H__
+#define __IO_SERVICE_H__
+
+#include <xtra_asio.h>
+
+#include <boost/thread.hpp>
+#include <boost/noncopyable.hpp>
+
+#include <mutex>
+#include <memory>
+
+#include <Client/LogClient.h>
+
+// 提供定时回调接口服务
+
+
+namespace tzrpc_client {
+
+class IoService: public boost::noncopyable {
+
+public:
+
+    static IoService& instance();
+
+    bool init() {
+
+        if (initialized_) {
+            return true;
+        }
+
+        std::lock_guard<std::mutex> lock(lock_);
+
+        if (initialized_) {
+            return true;
+        }
+
+        // 创建io_service工作线程
+        io_service_thread_ = boost::thread(std::bind(&IoService::io_service_run, this));
+        initialized_ = true;
+
+        log_notice("IoService initialized ok.");
+        return true;
+
+    }
+
+    io_service& get_io_service() {
+        return  io_service_;
+    }
+
+    void stop_io_service() {
+
+        io_service_.stop();
+        work_guard_.reset();
+    }
+
+
+private:
+
+    IoService():
+        lock_(),
+        initialized_(false),
+        io_service_thread_(),
+        io_service_(),
+        work_guard_(new io_service::work(io_service_)){
+    }
+
+    ~IoService() {
+        io_service_.stop();
+        work_guard_.reset();
+    }
+
+    // 确保只初始化一次，double-lock-check
+    std::mutex lock_;
+    bool initialized_;
+
+    // 再启一个io_service_，主要来处理定时器等常用服务
+    boost::thread io_service_thread_;
+    io_service io_service_;
+
+    // io_service如果没有任务，会直接退出执行，所以需要
+    // 一个强制的work来持有之
+    std::unique_ptr<io_service::work> work_guard_;
+
+    void io_service_run() {
+
+        log_notice("io_service thread running...");
+
+        // io_service would not have had any work to do,
+        // and consequently io_service::run() would have returned immediately.
+
+        boost::system::error_code ec;
+        io_service_.run(ec);
+
+        log_notice("io_service thread terminated ...");
+    }
+
+};
+
+} // end namespace tzrpc_client
+
+
+#endif // __IO_SERVICE_H__

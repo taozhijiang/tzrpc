@@ -19,7 +19,7 @@ bool XtraTaskService::init() {
     try
     {
 
-        const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc_services");
+        const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc.services");
         for(int i = 0; i < rpc_services.getLength(); ++i) {
 
             const libconfig::Setting& service = rpc_services[i];
@@ -47,7 +47,7 @@ bool XtraTaskService::init() {
         }
 
     } catch (const libconfig::SettingNotFoundException &nfex) {
-        log_err("rpc_services not found!");
+        log_err("rpc.services not found!");
     } catch (std::exception& e) {
         log_err("execptions catched for %s",  e.what());
     }
@@ -250,7 +250,7 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
         } else if (request.has_test_timeout()) {
             int32_t timeout = request.test_timeout().timeout();
             log_debug("this thread will sleep for %d sec.", timeout);
-            boost::this_thead::sleepfor(timeout);
+            ::sleep(timeout);
             response.mutable_test_timeout()->set_timeout("you should not see this.");
         } else {
             log_err("undetected specified service call.");
