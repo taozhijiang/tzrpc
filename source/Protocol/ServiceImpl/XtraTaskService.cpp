@@ -67,9 +67,9 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
     std::unique_lock<std::mutex> lock(conf_lock_);
 
     if (!conf_ptr_) {
-        conf_ptr_.reset(new DetailExecutorConf());
+        conf_ptr_.reset(new ServiceConf());
         if (!conf_ptr_) {
-            log_err("create DetailExecutorConf instance failed.");
+            log_err("create ServiceConf instance failed.");
             return false;
         }
     }
@@ -113,7 +113,7 @@ ExecutorConf XtraTaskService::get_executor_conf() override {
     return conf_ptr_->executor_conf_;
 }
 
-int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override {
+int XtraTaskService::module_runtime(const libconfig::Config& conf) override {
 
     try {
 
@@ -145,9 +145,9 @@ int XtraTaskService::update_runtime_conf(const libconfig::Config& conf) override
 // 做一些可选的配置动态更新
 bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& setting) {
 
-    std::shared_ptr<DetailExecutorConf> conf_ptr = std::make_shared<DetailExecutorConf>();
+    std::shared_ptr<ServiceConf> conf_ptr = std::make_shared<ServiceConf>();
     if (!conf_ptr) {
-        log_err("create DetailExecutorConf instance failed.");
+        log_err("create ServiceConf instance failed.");
         return -1;
     }
 
@@ -185,7 +185,7 @@ bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& 
     return 0;
 }
 
-int XtraTaskService::module_status(std::string& strModule, std::string& strKey, std::string& strValue) override {
+int XtraTaskService::module_status(std::string& module, std::string& name, std::string& val) override {
 
     // empty status ...
 
@@ -253,11 +253,11 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
             std::string real_msg = request.echo().msg();
             log_debug("XtraTask::XtraReadOps::echo -> %s", real_msg.c_str());
             response.mutable_echo()->set_msg("echo:" + real_msg);
-        } else if (request.has_test_timeout()) {
-            int32_t timeout = request.test_timeout().timeout();
+        } else if (request.has_timeout()) {
+            int32_t timeout = request.timeout().timeout();
             log_debug("this thread will sleep for %d sec.", timeout);
             ::sleep(timeout);
-            response.mutable_test_timeout()->set_timeout("you should not see this.");
+            response.mutable_timeout()->set_timeout("you should not see this.");
         } else {
             log_err("undetected specified service call.");
             rpc_instance->reject(RpcResponseStatus::INVALID_REQUEST);

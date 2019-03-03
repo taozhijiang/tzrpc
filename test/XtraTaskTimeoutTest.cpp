@@ -37,7 +37,7 @@ TEST(XtraTaskTimeoutTest, TimeoutTest) {
     std::string str;
 
     XtraTask::XtraReadOps::Request request;
-    request.mutable_test_timeout()->set_timeout(3);
+    request.mutable_timeout()->set_timeout(3);
     ASSERT_TRUE(ProtoBuf::marshalling_to_string(request, &mar_str));
     auto status = client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, mar_str, str, 2);
     std::cout << "callout interval: " << ::time(NULL) - start_time << std::endl;

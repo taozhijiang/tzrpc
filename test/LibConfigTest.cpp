@@ -24,6 +24,6 @@ TEST(LibConfigTest, SysConfigInitVefifyTest) {
     ASSERT_THAT(s_value, Eq("1.2.0"));
 
     conf_ptr->lookupValue("log_level", i_value);
-    ASSERT_THAT(i_value, Eq(7));
+    ASSERT_THAT(i_value, Le(7));
 
 }

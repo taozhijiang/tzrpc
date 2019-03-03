@@ -43,6 +43,7 @@ void TcpConnAsync::start() override {
 
 
 void TcpConnAsync::stop() {
+
     set_conn_stat(ConnStat::kPending);
 }
 
@@ -66,7 +67,7 @@ int TcpConnAsync::parse_header() {
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion) {
-        log_err("message header check error!");
+        log_err("async message header check error!");
         return -1;
     }
 
@@ -350,6 +351,7 @@ bool TcpConnAsync::handle_socket_ec(const boost::system::error_code& ec ) {
     }
     else if (ec == boost::asio::error::eof)
     {
+        // 正常的，数据传输完毕
         close_socket = true;
     }
     else if (ec == boost::asio::error::operation_aborted)

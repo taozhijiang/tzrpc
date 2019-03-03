@@ -11,6 +11,7 @@
 #include <libconfig.h++>
 #include <boost/noncopyable.hpp>
 
+#include <memory>
 #include <string>
 
 // real rpc should implement this interface class
@@ -43,8 +44,8 @@ public:
     virtual bool init() = 0;
 
     virtual ExecutorConf get_executor_conf() = 0;
-    virtual int update_runtime_conf(const libconfig::Config& conf) = 0;
-    virtual int module_status(std::string& strModule, std::string& strKey, std::string& strValue) = 0;
+    virtual int module_runtime(const libconfig::Config& conf) = 0;
+    virtual int module_status(std::string& module, std::string& name, std::string& val) = 0;
 
 };
 

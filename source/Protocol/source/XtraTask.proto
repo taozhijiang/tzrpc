@@ -28,10 +28,10 @@ message XtraReadOps {
         optional Echo echo      = 5;
 
         // Timeout
-        message Test_Timeout {
+        message Timeout {
             required int32 timeout = 1;
         }
-        optional Test_Timeout test_timeout = 6;
+        optional Timeout timeout = 6;
     }
 
     // 所有响应报文
@@ -56,10 +56,10 @@ message XtraReadOps {
         optional Echo echo      = 5;
 
         // Timeout
-        message Test_Timeout {
+        message Timeout {
             required string timeout = 1;
         }
-        optional Test_Timeout test_timeout = 6;
+        optional Timeout timeout = 6;
 
     }
 }

@@ -37,6 +37,7 @@ bool log_init(int log_level) {
 
 void log_close() {
 
+    log_notice("closing rsyslog...");
     closelog();
 }
 

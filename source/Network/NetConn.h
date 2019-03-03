@@ -38,6 +38,7 @@ public:
         conn_stat_(kPending),
         socket_(sock)
     {
+        // 默认是阻塞类型的socket，异步调用的时候自行设置
         set_tcp_nonblocking(false);
     }
 
@@ -48,28 +49,35 @@ public:
     // some general tiny settings function
 
     bool set_tcp_nonblocking(bool set_value) {
+
+        boost::system::error_code ignore_ec;
+
         socket_base::non_blocking_io command(set_value);
-        socket_->io_control(command);
+        socket_->io_control(command, ignore_ec);
 
         return true;
     }
 
     bool set_tcp_nodelay(bool set_value) {
 
+        boost::system::error_code ignore_ec;
+
         boost::asio::ip::tcp::no_delay nodelay(set_value);
-        socket_->set_option(nodelay);
+        socket_->set_option(nodelay, ignore_ec);
         boost::asio::ip::tcp::no_delay option;
-        socket_->get_option(option);
+        socket_->get_option(option, ignore_ec);
 
         return (option.value() == set_value);
     }
 
     bool set_tcp_keepalive(bool set_value) {
 
+        boost::system::error_code ignore_ec;
+
         boost::asio::socket_base::keep_alive keepalive(set_value);
-        socket_->set_option(keepalive);
+        socket_->set_option(keepalive, ignore_ec);
         boost::asio::socket_base::keep_alive option;
-        socket_->get_option(option);
+        socket_->get_option(option, ignore_ec);
 
         return (option.value() == set_value);
     }

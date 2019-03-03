@@ -39,7 +39,10 @@ public:
 
     // 配置更新的调用入口函数
     int  update_runtime_conf();
-    int  register_conf_callback(ConfUpdateCallable func);
+    int  register_runtime_callback(const std::string& name, ConfUpdateCallable func);
+
+    int module_status(std::string& module, std::string& name, std::string& val);
+
 
     std::shared_ptr<libconfig::Config> get_conf() {
 
@@ -120,7 +123,7 @@ private:
 
     bool in_process_;
     std::mutex lock_;
-    std::vector<ConfUpdateCallable> calls_;
+    std::vector<std::pair<std::string, ConfUpdateCallable>> calls_;
 };
 
 } // end namespace tzrpc

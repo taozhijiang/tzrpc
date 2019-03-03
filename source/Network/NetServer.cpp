@@ -163,13 +163,14 @@ bool NetServer::init() {
     }
 
     // 注册配置动态更新的回调函数
-    ConfHelper::instance().register_conf_callback(
-            std::bind(&NetServer::update_runtime_conf, this,
+    ConfHelper::instance().register_runtime_callback(
+            "NetServer",
+            std::bind(&NetServer::module_runtime, this,
                       std::placeholders::_1));
 
     // 系统状态展示相关的初始化
     Status::instance().register_status_callback(
-            "net_server",
+            "NetServer",
             std::bind(&NetServer::module_status, this,
                       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
@@ -248,10 +249,10 @@ void NetServer::io_service_run(ThreadObjPtr ptr) {
 
 
 
-int NetServer::module_status(std::string& strModule, std::string& strKey, std::string& strValue) {
+int NetServer::module_status(std::string& module, std::string& name, std::string& val) {
 
-    strModule = "tzrpc";
-    strKey = "net_server";
+    module = "tzrpc";
+    name = "NetServer";
 
     std::stringstream ss;
 
@@ -277,12 +278,12 @@ int NetServer::module_status(std::string& strModule, std::string& strKey, std::s
     ss << "\t" << "session_cancel_time_out: " << conf_.session_cancel_time_out_ << std::endl;
     ss << "\t" << "ops_cancel_time_out: " << conf_.ops_cancel_time_out_ << std::endl;
 
-    strValue = ss.str();
+    val = ss.str();
     return 0;
 }
 
 
-int NetServer::update_runtime_conf(const libconfig::Config& cfg) {
+int NetServer::module_runtime(const libconfig::Config& cfg) {
 
     NetConf conf {};
     if (!conf.load_conf(cfg)) {

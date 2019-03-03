@@ -30,7 +30,7 @@ bool operator==(const Message& a, const Message& b) {
 
 static inline
 bool operator!=(const Message& a, const Message& b) {
-	return !(a == b);
+    return !(a == b);
 }
 
 // Equality and inequality between protocol buffers and their text format
@@ -41,7 +41,7 @@ bool operator==(const Message& a, const std::string& bStr) {
     // Create new instance of the same type
     std::unique_ptr<Message> b(a.New());
 
-	// Create a LogSilencer if you want to temporarily suppress all log messages.
+    // Create a LogSilencer if you want to temporarily suppress all log messages.
     LogSilencer _;
     TextFormat::ParseFromString(bStr, b.get());
     return (a == *b);
@@ -49,17 +49,17 @@ bool operator==(const Message& a, const std::string& bStr) {
 
 static inline
 bool operator==(const std::string& a, const Message& b) {
-	return (b == a);
+    return (b == a);
 }
 
 static inline
 bool operator!=(const Message& a, const std::string& b) {
-	return !(a == b);
+    return !(a == b);
 }
 
 static inline
 bool operator!=(const std::string& a, const Message& b) {
-	return !(a == b);
+    return !(a == b);
 }
 
 } // namespace google::protobuf

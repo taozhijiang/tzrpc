@@ -118,10 +118,10 @@ void Executor::executor_service_run(ThreadObjPtr ptr) {
 }
 
 
-int Executor::module_status(std::string& strModule, std::string& strKey, std::string& strValue) {
+int Executor::module_status(std::string& module, std::string& name, std::string& val) {
 
-    strModule = "tzrpc";
-    strKey = "executor_" + instance_name();
+    module = "tzrpc";
+    name = "executor_" + instance_name();
 
     std::stringstream ss;
 
@@ -141,15 +141,15 @@ int Executor::module_status(std::string& strModule, std::string& strKey, std::st
     service_impl_->module_status(nullModule, subKey, subValue);
 
     // collect
-    strValue = ss.str() + subValue;
+    val = ss.str() + subValue;
 
     return 0;
 }
 
 
-int Executor::update_runtime_conf(const libconfig::Config& conf) {
+int Executor::module_runtime(const libconfig::Config& conf) {
 
-    int ret = service_impl_->update_runtime_conf(conf);
+    int ret = service_impl_->module_runtime(conf);
 
     // 如果返回0，表示配置文件已经正确解析了，同时ExecutorConf也重新初始化了
     if (ret == 0) {
