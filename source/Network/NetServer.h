@@ -33,6 +33,8 @@ private:
     int32_t     service_speed_;
     int32_t     service_token_;
 
+    int32_t     service_concurrency_;       // 最大连接并发控制
+
     int32_t     session_cancel_time_out_;   // session间隔会话时长
     int32_t     ops_cancel_time_out_;       // ops操作超时时长
 
@@ -100,6 +102,7 @@ private:
         service_enabled_(true),
         service_speed_(0),
         service_token_(0),
+        service_concurrency_(0),
         session_cancel_time_out_(0),
         ops_cancel_time_out_(0),
         send_max_msg_size_(0),

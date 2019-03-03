@@ -16,6 +16,7 @@
 
 namespace tzrpc {
 
+
 bool NetConf::load_conf(std::shared_ptr<libconfig::Config> conf_ptr) {
     const auto& conf = *conf_ptr;
     return load_conf(conf);
@@ -77,11 +78,16 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
         return false;
     }
 
-    bool value_b;
     conf.lookupValue("rpc.network.service_enable", service_enabled_);
     conf.lookupValue("rpc.network.service_speed", service_speed_);
     if (service_speed_ < 0){
         log_err("invalid rpc.network.service_speed value %d.", service_speed_);
+        return false;
+    }
+
+    conf.lookupValue("rpc.network.service_concurrency", service_concurrency_);
+    if (service_concurrency_ < 0){
+        log_err("invalid rpc.network.service_concurrency value %d.", service_concurrency_);
         return false;
     }
 
@@ -206,6 +212,33 @@ void NetServer::accept_handler(const boost::system::error_code& ec, SocketPtr so
         std::string remote_ip = remote.address().to_string(ignore_ec);
         log_debug("remote Client Info: %s:%d", remote_ip.c_str(), remote.port());
 
+
+        if (!conf_.check_safe_ip(remote_ip)) {
+            log_err("check safe_ip failed for: %s", remote_ip.c_str());
+
+            sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
+            sock_ptr->close(ignore_ec);
+            break;
+        }
+
+        if (!conf_.get_service_token()) {
+            log_err("request network service token failed, enabled: %s, speed: %ld",
+                    conf_.service_enabled_ ? "true" : "false", conf_.service_speed_);
+
+            sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
+            sock_ptr->close(ignore_ec);
+            break;
+        }
+
+        if (conf_.service_concurrency_ != 0 &&
+            conf_.service_concurrency_ < TcpConnAsync::current_concurrency_) {
+            log_err("service_concurrency_ error, limit: %d, current: %d",
+                    conf_.service_concurrency_, TcpConnAsync::current_concurrency_.load());
+            sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
+            sock_ptr->close(ignore_ec);
+            break;
+        }
+
         TcpConnAsyncPtr new_conn = std::make_shared<TcpConnAsync>(sock_ptr, *this);
         new_conn->start();
 
@@ -275,6 +308,7 @@ int NetServer::module_status(std::string& module, std::string& name, std::string
 
     ss << "\t" << "service_enabled: " << (conf_.service_enabled_  ? "true" : "false") << std::endl;
     ss << "\t" << "service_speed_limit(tps): " << conf_.service_speed_ << std::endl;
+    ss << "\t" << "service_concurrency: " << conf_.service_concurrency_ << std::endl;
     ss << "\t" << "session_cancel_time_out: " << conf_.session_cancel_time_out_ << std::endl;
     ss << "\t" << "ops_cancel_time_out: " << conf_.ops_cancel_time_out_ << std::endl;
 
@@ -312,7 +346,7 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
     }
 
     if (conf_.service_speed_ != conf.service_speed_) {
-        log_notice("update http_service_speed from %ld to %ld",
+        log_notice("update service_speed from %d to %d",
                    conf_.service_speed_, conf.service_speed_);
         conf_.service_speed_ = conf.service_speed_;
 
@@ -343,6 +377,16 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
     log_notice("service enabled: %s, speed: %d",
                conf_.service_enabled_ ? "true" : "false",
                conf_.service_speed_);
+
+    if (conf_.service_concurrency_ != conf.service_concurrency_ ) {
+        log_err("update service_concurrency from %d to %d.",
+                conf_.service_concurrency_, conf.service_concurrency_);
+        conf_.service_concurrency_ = conf.service_concurrency_;
+    }
+
+    if (conf_.service_concurrency_ != 0) {
+        log_notice("service_concurrency: %d",  conf_.service_concurrency_);
+    }
 
     return 0;
 }

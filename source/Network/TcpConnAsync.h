@@ -9,6 +9,9 @@
 #ifndef __NETWORK_TCP_CONN_ASYNC_H__
 #define __NETWORK_TCP_CONN_ASYNC_H__
 
+
+#include <boost/atomic/atomic.hpp>
+
 #include <Network/NetConn.h>
 #include <Utils/Log.h>
 
@@ -27,6 +30,9 @@ class TcpConnAsync: public NetConn, public boost::noncopyable,
                     public std::enable_shared_from_this<TcpConnAsync> {
 
 public:
+
+    // 当前并发连接数目
+    static boost::atomic<int32_t> current_concurrency_;
 
     /// Construct a connection with the given socket.
     TcpConnAsync(std::shared_ptr<ip::tcp::socket> socket, NetServer& server);

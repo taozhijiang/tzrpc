@@ -18,6 +18,8 @@
 
 namespace tzrpc {
 
+boost::atomic<int32_t> TcpConnAsync::current_concurrency_(0);
+
 TcpConnAsync::TcpConnAsync(std::shared_ptr<ip::tcp::socket> socket,
                            NetServer& server):
     NetConn(socket),
@@ -29,9 +31,13 @@ TcpConnAsync::TcpConnAsync(std::shared_ptr<ip::tcp::socket> socket,
 
     set_tcp_nodelay(true);
     set_tcp_nonblocking(true);
+
+    ++ current_concurrency_;
 }
 
 TcpConnAsync::~TcpConnAsync() {
+
+    -- current_concurrency_;
     log_debug("TcpConnAsync SOCKET RELEASED!!!");
 }
 
