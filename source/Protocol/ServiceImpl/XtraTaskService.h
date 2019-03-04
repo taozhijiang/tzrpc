@@ -8,14 +8,16 @@
 
 #include <Scaffold/ConfHelper.h>
 
-#include <Protocol/gen-cpp/XtraTask.pb.h>
+#include "RpcServiceBase.h"
 
 namespace tzrpc {
 
-class XtraTaskService : public Service {
+class XtraTaskService : public Service, 
+                        public RpcServiceBase {
 
 public:
     explicit XtraTaskService(const std::string& instance_name):
+        RpcServiceBase(instance_name),
         instance_name_(instance_name) {
     }
 

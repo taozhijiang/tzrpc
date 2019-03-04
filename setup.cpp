@@ -5,6 +5,7 @@
 
 #include <syslog.h>
 #include <boost/format.hpp>
+#include <linux/limits.h>
 
 #include <Utils/Utils.h>
 #include <Utils/Log.h>

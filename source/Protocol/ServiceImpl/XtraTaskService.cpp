@@ -1,6 +1,7 @@
 #include <Utils/Log.h>
 
 #include <Core/ProtoBuf.h>
+#include <Protocol/gen-cpp/XtraTask.pb.h>
 
 #include "XtraTaskService.h"
 
@@ -74,32 +75,14 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
         }
     }
 
-    setting.lookupValue("exec_thread_pool_size", conf_ptr_->executor_conf_.exec_thread_number_);
-    setting.lookupValue("exec_thread_pool_size_hard", conf_ptr_->executor_conf_.exec_thread_number_hard_);
-    setting.lookupValue("exec_thread_pool_step_size", conf_ptr_->executor_conf_.exec_thread_step_size_);
-
-    // 检查ExecutorConf参数合法性
-    if (conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_) {
-        conf_ptr_->executor_conf_.exec_thread_number_hard_ = conf_ptr_->executor_conf_.exec_thread_number_;
+    ExecutorConf conf;
+    if (RpcServiceBase::handle_rpc_service_conf(setting, conf) != 0) {
+        log_err("Handler ExecutorConf failed.");
+        return -1;
     }
 
-    if (conf_ptr_->executor_conf_.exec_thread_number_ <= 0 ||
-        conf_ptr_->executor_conf_.exec_thread_number_ > 100 ||
-        conf_ptr_->executor_conf_.exec_thread_number_hard_ > 100 ||
-        conf_ptr_->executor_conf_.exec_thread_number_hard_ < conf_ptr_->executor_conf_.exec_thread_number_ )
-    {
-        log_err("invalid exec_thread setting: %d, %d",
-                conf_ptr_->executor_conf_.exec_thread_number_,
-                conf_ptr_->executor_conf_.exec_thread_number_hard_);
-        return false;
-    }
-
-    // 可以为0，表示不进行动态更新
-    if (conf_ptr_->executor_conf_.exec_thread_step_size_ < 0) {
-        log_err("invalid exec_thread_step_size setting: %d",
-                conf_ptr_->executor_conf_.exec_thread_step_size_);
-        return false;
-    }
+    // 保存更新
+    conf_ptr_->executor_conf_ = conf;
 
     // other conf handle may add code here...
 
@@ -145,41 +128,16 @@ int XtraTaskService::module_runtime(const libconfig::Config& conf) override {
 // 做一些可选的配置动态更新
 bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& setting) {
 
-    std::shared_ptr<ServiceConf> conf_ptr = std::make_shared<ServiceConf>();
-    if (!conf_ptr) {
-        log_err("create ServiceConf instance failed.");
-        return -1;
-    }
-
-    setting.lookupValue("exec_thread_pool_size", conf_ptr->executor_conf_.exec_thread_number_);
-    setting.lookupValue("exec_thread_pool_size_hard", conf_ptr->executor_conf_.exec_thread_number_hard_);
-    setting.lookupValue("exec_thread_pool_step_size", conf_ptr->executor_conf_.exec_thread_step_size_);
-
-    // 检查ExecutorConf参数合法性
-    if (conf_ptr->executor_conf_.exec_thread_number_hard_ < conf_ptr->executor_conf_.exec_thread_number_) {
-        conf_ptr->executor_conf_.exec_thread_number_hard_ = conf_ptr->executor_conf_.exec_thread_number_;
-    }
-
-    if (conf_ptr->executor_conf_.exec_thread_number_ <= 0 ||
-        conf_ptr->executor_conf_.exec_thread_number_ > 100 ||
-        conf_ptr->executor_conf_.exec_thread_number_hard_ > 100 ||
-        conf_ptr->executor_conf_.exec_thread_number_hard_ < conf_ptr->executor_conf_.exec_thread_number_ )
-    {
-        log_err("invalid exec_thread_pool_size setting: %d, %d",
-                conf_ptr->executor_conf_.exec_thread_number_, conf_ptr->executor_conf_.exec_thread_number_hard_);
-        return -1;
-    }
-
-    if (conf_ptr->executor_conf_.exec_thread_step_size_ < 0) {
-        log_err("invalid exec_thread_step_size setting: %d",
-                conf_ptr->executor_conf_.exec_thread_step_size_);
+    ExecutorConf conf;
+    if (RpcServiceBase::handle_rpc_service_conf(setting, conf) != 0) {
+        log_err("Handler ExecutorConf failed.");
         return -1;
     }
 
     {
         // do swap here
         std::unique_lock<std::mutex> lock(conf_lock_);
-        conf_ptr_.swap(conf_ptr);
+        conf_ptr_->executor_conf_ = conf;
     }
 
     return 0;

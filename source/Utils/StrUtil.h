@@ -24,6 +24,22 @@ namespace tzrpc {
 
 struct StrUtil {
 
+    static const int kMaxBuffSize = 2*8190;
+    static std::string str_format(const char * fmt, ...) {
+
+        char buff[kMaxBuffSize + 1] = {0, };
+        uint32_t n = 0;
+
+        va_list ap;
+        va_start(ap, fmt);
+        n += vsnprintf(buff, kMaxBuffSize, fmt, ap);
+        va_end(ap);
+        buff[n] = '\0';
+
+        return std::string(buff, n);
+    }
+
+
     static size_t trim_whitespace(std::string& str) {
 
         size_t index = 0;
