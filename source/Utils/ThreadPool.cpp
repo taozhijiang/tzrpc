@@ -8,7 +8,6 @@
 #include <mutex>
 #include <functional>
 
-#include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
 
@@ -18,12 +17,20 @@
 // impl details
 namespace tzrpc {
 
-class ThreadPool::Impl : private boost::noncopyable {
+class ThreadPool::Impl {
 
 public:
     explicit Impl(uint32_t pool_size):
         pool_size_(pool_size) {
     }
+
+    virtual ~Impl() {
+        graceful_stop_tasks();
+    }
+
+    // 禁止拷贝
+    Impl(const Impl&) = delete;
+    Impl& operator=(const Impl&) = delete;
 
     void callable_wrapper(ThreadObjPtr ptr){
 
@@ -32,10 +39,6 @@ public:
             ::usleep(500*1000);
 
         func_(ptr);
-    }
-
-    virtual ~Impl() {
-        graceful_stop_tasks();
     }
 
     // pool_size_ 已经校验

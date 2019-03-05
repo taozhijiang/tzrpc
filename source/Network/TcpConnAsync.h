@@ -26,7 +26,7 @@ typedef std::weak_ptr<TcpConnAsync>   TcpConnAsyncWeakPtr;
 
 
 
-class TcpConnAsync: public NetConn, public boost::noncopyable,
+class TcpConnAsync: public NetConn,
                     public std::enable_shared_from_this<TcpConnAsync> {
 
 public:
@@ -37,6 +37,10 @@ public:
     /// Construct a connection with the given socket.
     TcpConnAsync(std::shared_ptr<ip::tcp::socket> socket, NetServer& server);
     virtual ~TcpConnAsync();
+
+    // 禁止拷贝
+    TcpConnAsync(const TcpConnAsync&) = delete;
+    TcpConnAsync& operator=(const TcpConnAsync&) = delete;
 
     virtual void start();
     void stop();

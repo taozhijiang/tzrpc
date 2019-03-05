@@ -9,7 +9,6 @@
 #define __RPC_SERVICE_H__
 
 #include <libconfig.h++>
-#include <boost/noncopyable.hpp>
 
 #include <memory>
 #include <string>
@@ -31,11 +30,15 @@ struct ExecutorConf {
 };
 
 
-class Service: public boost::noncopyable {
+class Service {
 
 public:
     Service() {}
     ~Service() {}
+
+    // 禁止拷贝
+    Service(const Service&) = delete;
+    Service& operator=(const Service&) = delete;
 
     // 根据opCode分发rpc请求的处理
     virtual void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) = 0;

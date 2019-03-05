@@ -11,7 +11,6 @@
 #include <xtra_asio.h>
 
 #include <mutex>
-#include <boost/noncopyable.hpp>
 #include <libconfig.h++>
 
 #include <Utils/Log.h>
@@ -117,7 +116,7 @@ private:
 
 } __attribute__ ((aligned (4)));  // end class NetConf
 
-class NetServer: public boost::noncopyable {
+class NetServer {
 
     friend class TcpConnAsync;
 
@@ -131,6 +130,10 @@ public:
         conf_(),
         io_service_threads_() {
     }
+
+    // 禁止拷贝
+    NetServer(const NetServer&) = delete;
+    NetServer& operator=(const NetServer&) = delete;
 
     bool init();
 

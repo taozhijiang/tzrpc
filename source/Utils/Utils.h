@@ -32,7 +32,7 @@ std::string convert_to_string(const T& arg) {
 
 
 
-struct RAII_PERF_COUNTER: public boost::noncopyable {
+struct RAII_PERF_COUNTER {
 
     RAII_PERF_COUNTER(const std::string env, const std::string key):
         env_(env),
@@ -50,7 +50,10 @@ struct RAII_PERF_COUNTER: public boost::noncopyable {
         display_info(env_, time_ms, time_us);
     }
 
-    // 监控系统可以从这里上报数据
+    // 禁止拷贝
+    RAII_PERF_COUNTER(const RAII_PERF_COUNTER&) = delete;
+    RAII_PERF_COUNTER& operator=(const RAII_PERF_COUNTER&) = delete;
+
     void display_info(const std::string& env, int64_t time_ms, int64_t time_us);
 
 private:

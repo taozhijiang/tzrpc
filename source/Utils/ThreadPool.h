@@ -36,7 +36,7 @@ typedef std::shared_ptr<boost::thread>       ThreadPtr;
 typedef std::shared_ptr<ThreadObj>           ThreadObjPtr;
 typedef std::function<void (ThreadObjPtr)>   ThreadRunnable;
 
-class ThreadPool: private boost::noncopyable {
+class ThreadPool {
 
     // 先于线程工作之前的所有预备工作
     class Impl;
@@ -46,6 +46,10 @@ public:
 
     ThreadPool(uint32_t pool_size = 1);
     ~ThreadPool();
+
+    // 禁止拷贝
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
 
 
     bool init_threads(ThreadRunnable func);

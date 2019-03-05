@@ -17,7 +17,6 @@
 #include <libconfig.h++>
 
 #include <boost/optional.hpp>
-#include <boost/noncopyable.hpp>
 
 #include <Utils/Log.h>
 
@@ -29,7 +28,7 @@ namespace tzrpc {
 // 配置动态更新回调函数接口类型
 typedef std::function<int (const libconfig::Config& cfg)> ConfUpdateCallable;
 
-class ConfHelper: public boost::noncopyable {
+class ConfHelper {
 
 public:
     static ConfHelper& instance();
@@ -114,7 +113,11 @@ private:
         in_process_(false) {
     }
 
-    ~ConfHelper(){}
+    virtual ~ConfHelper(){}
+
+    // 禁止拷贝
+    ConfHelper(const ConfHelper&) = delete;
+    ConfHelper& operator=(const ConfHelper&) = delete;
 
 private:
     std::string cfgfile_;

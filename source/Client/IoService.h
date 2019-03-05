@@ -11,7 +11,6 @@
 #include <xtra_asio.h>
 
 #include <boost/thread.hpp>
-#include <boost/noncopyable.hpp>
 
 #include <mutex>
 #include <memory>
@@ -23,7 +22,7 @@
 
 namespace tzrpc_client {
 
-class IoService: public boost::noncopyable {
+class IoService {
 
 public:
 
@@ -75,6 +74,10 @@ private:
         io_service_.stop();
         work_guard_.reset();
     }
+
+    // 禁止拷贝
+    IoService(const IoService&) = delete;
+    IoService& operator=(const IoService&) = delete;
 
     // 确保只初始化一次，double-lock-check
     std::mutex lock_;

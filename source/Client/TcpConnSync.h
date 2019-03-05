@@ -20,7 +20,7 @@ using tzrpc::IOBound;
 using tzrpc::ConnStat;
 class RpcClientSetting;
 
-class TcpConnSync: public NetConn, public boost::noncopyable,
+class TcpConnSync: public NetConn,
                    public std::enable_shared_from_this<TcpConnSync> {
 
     friend class RpcClientImpl;
@@ -32,6 +32,10 @@ public:
                          boost::asio::io_service& io_service,
                          RpcClientSetting& client_setting);
     virtual ~TcpConnSync();
+
+    // 禁止拷贝
+    TcpConnSync(const TcpConnSync&) = delete;
+    TcpConnSync& operator=(const TcpConnSync&) = delete;
 
     bool recv_net_message(Message& msg) {
         return do_read(msg);

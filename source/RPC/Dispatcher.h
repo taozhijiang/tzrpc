@@ -15,16 +15,13 @@
 #include <mutex>
 
 
-#include <boost/noncopyable.hpp>
-
-
 namespace tzrpc {
 
 class RpcInstance;
 class Service;
 class Executor;
 
-class Dispatcher: public boost::noncopyable {
+class Dispatcher {
 
 public:
     static Dispatcher& instance();
@@ -49,6 +46,10 @@ private:
 
     ~Dispatcher() {
     }
+
+    // 禁止拷贝
+    Dispatcher(const Dispatcher&) = delete;
+    Dispatcher& operator=(const Dispatcher&) = delete;
 
     bool initialized_;
 
