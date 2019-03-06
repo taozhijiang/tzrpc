@@ -5,7 +5,7 @@
  *
  */
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 
 #include <Network/NetServer.h>
 #include <Network/TcpConnAsync.h>

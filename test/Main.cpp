@@ -1,7 +1,7 @@
 #include <iostream>
 #include "gtest/gtest.h"
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 
 #include <syslog.h>
 

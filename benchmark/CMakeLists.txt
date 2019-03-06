@@ -8,19 +8,18 @@ set(CMAKE_CXX_FLAGS_DEBUG   "$ENV{CXXFLAGS} -O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 ")
 
 
-set (XTRA_RHEL6x /home/nicol/svnclient/Incubator/xtra_rhel6.x)
 set (INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/include/
         ${PROJECT_SOURCE_DIR}/source/
-        ${XTRA_RHEL6x}/include/
-        ${XTRA_RHEL6x}/include/google/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/include/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/include/google/
 )
 
 link_directories( /usr/lib64/mysql/
-        ${XTRA_RHEL6x}/libs/
-        ${XTRA_RHEL6x}/libs/boost/
-        ${XTRA_RHEL6x}/libs/google/
-        ${XTRA_RHEL6x}/libs/google/protobuf-2.5.0/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/boost/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/google/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/google/protobuf-2.5.0/
         ../lib
 )
 

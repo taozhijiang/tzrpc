@@ -6,7 +6,7 @@
  */
 
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 
 #include <RPC/RpcInstance.h>
 #include <RPC/Executor.h>

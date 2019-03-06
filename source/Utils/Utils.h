@@ -10,7 +10,7 @@
 
 #include <sys/time.h>
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>

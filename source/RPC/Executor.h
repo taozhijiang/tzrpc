@@ -9,7 +9,7 @@
 #ifndef __RPC_EXECUTOR_H__
 #define __RPC_EXECUTOR_H__
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 #include <xtra_asio.h>
 
 #include <Utils/Log.h>
