@@ -119,7 +119,7 @@ void NetConf::timed_feed_token_handler(const boost::system::error_code& ec) {
     feed_service_token();
 
     // 再次启动定时器
-    timed_feed_token_->expires_from_now(boost::chrono::seconds(1)); // 1sec
+    timed_feed_token_->expires_from_now(seconds(1)); // 1sec
     timed_feed_token_->async_wait(
                 std::bind(&NetConf::timed_feed_token_handler, this, std::placeholders::_1));
 }
@@ -137,7 +137,7 @@ bool NetServer::init() {
     }
 
     // 上面的conf_参数已经经过合法性的检验了
-    ep_ = ip::tcp::endpoint(ip::address::from_string(conf_.bind_addr_), conf_.bind_port_);
+    ep_ = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(conf_.bind_addr_), conf_.bind_port_);
     log_alert("create listen endpoint for %s:%d",
                       conf_.bind_addr_.c_str(), conf_.bind_port_);
 
@@ -152,12 +152,12 @@ bool NetServer::init() {
             return false;
         }
 
-        conf_.timed_feed_token_->expires_from_now(boost::chrono::seconds(1));
+        conf_.timed_feed_token_->expires_from_now(seconds(1));
         conf_.timed_feed_token_->async_wait(
                     std::bind(&NetConf::timed_feed_token_handler, &conf_, std::placeholders::_1));
     }
 
-    log_debug("rpc.network service enabled: %s, speed: %ld tps",
+    log_debug("rpc.network service enabled: %s, speed: %d tps",
               conf_.service_enabled_ ? "true" : "false",
               conf_.service_speed_);
 
@@ -186,7 +186,7 @@ bool NetServer::init() {
 // accept stuffs
 void NetServer::do_accept() {
 
-    SocketPtr sock_ptr(new ip::tcp::socket(io_service_));
+    SocketPtr sock_ptr(new boost::asio::ip::tcp::socket(io_service_));
     acceptor_->async_accept(*sock_ptr,
                        std::bind(&NetServer::accept_handler, this,
                                    std::placeholders::_1, sock_ptr));
@@ -222,7 +222,7 @@ void NetServer::accept_handler(const boost::system::error_code& ec, SocketPtr so
         }
 
         if (!conf_.get_service_token()) {
-            log_err("request network service token failed, enabled: %s, speed: %ld",
+            log_err("request network service token failed, enabled: %s, speed: %d",
                     conf_.service_enabled_ ? "true" : "false", conf_.service_speed_);
 
             sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
@@ -360,7 +360,7 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
                 return -1;
             }
 
-            conf_.timed_feed_token_->expires_from_now(boost::chrono::seconds(1));
+            conf_.timed_feed_token_->expires_from_now(seconds(1));
             conf_.timed_feed_token_->async_wait(
                         std::bind(&NetConf::timed_feed_token_handler, &conf_, std::placeholders::_1));
         }

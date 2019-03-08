@@ -30,6 +30,7 @@ public:
         items_.push_back(t);
         item_notify_.notify_one();
     }
+
     template< typename InputIt >
     void PUSH(InputIt first, InputIt last) {
         std::lock_guard<std::mutex> lock(lock_);
@@ -51,26 +52,48 @@ public:
         items_.pop_front();
         return t;
     }
+
     size_t TRY_POP(std::vector<T>& vec) {
         std::unique_lock<std::mutex> lock(lock_);
+
         if (items_.empty()) {
             return 0;
         }
+
         vec.clear();
         vec.assign(items_.begin(), items_.end());
         items_.clear();
+
         return vec.size();
     }
 
     size_t POP(std::vector<T>& vec, size_t max_count, uint64_t msec) {
         std::unique_lock<std::mutex> lock(lock_);
 
+        // 因为wait_for可能会被伪唤醒，所以这里还是wait_until比较好
+
+        auto now = std::chrono::system_clock::now();
+        auto expire_tp = now + std::chrono::milliseconds(msec);
+
+        // no_timeout wakeup by notify_all, notify_one, or spuriously
+        // timeout    wakeup by timeout expiration
         while (items_.empty()) {
-            if (!item_notify_.wait_for(lock, std::chrono::milliseconds(msec))){
-                goto check;
+
+            // 如果超时，则直接到check处进行最后检查
+            // 如果是伪唤醒，则还需要检查items_是否为空，如果是空则继续睡眠
+
+#if __cplusplus >= 201103L
+            if (item_notify_.wait_until(lock, expire_tp) == std::cv_status::timeout){
+                break;
             }
+#else
+            if (!item_notify_.wait_until(lock, expire_tp)){
+                break;
+            }
+#endif
         }
-check:
+
+// all check here
         if (items_.empty()) {
             return 0;
         }
@@ -89,14 +112,28 @@ check:
     bool POP(T& t, uint64_t msec) {
         std::unique_lock<std::mutex> lock(lock_);
 
-        // if(!item_notify_.timed_wait(lock, timeout, std::bind(&EQueue::EMPTY, this))){
+        auto now = std::chrono::system_clock::now();
+        auto expire_tp = now + std::chrono::milliseconds(msec);
+
+        // no_timeout wakeup by notify_all, notify_one, or spuriously
+        // timeout    wakeup by timeout expiration
         while (items_.empty()) {
-            if (!item_notify_.wait_for(lock, std::chrono::milliseconds(msec))){
-                goto check;
+
+            // 如果超时，则直接到check处进行最后检查
+            // 如果是伪唤醒，则还需要检查items_是否为空，如果是空则继续睡眠
+
+#if __cplusplus >= 201103L
+            if (item_notify_.wait_until(lock, expire_tp) == std::cv_status::timeout){
+                break;
             }
+#else
+            if (!item_notify_.wait_until(lock, expire_tp)){
+                break;
+            }
+#endif
         }
 
-check:
+// all check here
         if (items_.empty()) {
             return false;
         }

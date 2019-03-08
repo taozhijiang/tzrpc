@@ -62,7 +62,7 @@ void RpcClientImpl::set_rpc_call_timeout(uint32_t sec) {
 
     SAFE_ASSERT( sec > 0 );
     was_timeout_ = false;
-    rpc_call_timer_->expires_from_now(boost::chrono::seconds(sec));
+    rpc_call_timer_->expires_from_now(seconds(sec));
     rpc_call_timer_->async_wait(std::bind(&RpcClientImpl::rpc_call_timeout, shared_from_this(),
                                            std::placeholders::_1));
 }
@@ -86,10 +86,11 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
     if (!conn_) {
 
         boost::system::error_code ec;
-        std::shared_ptr<ip::tcp::socket> socket_ptr
-                = std::make_shared<ip::tcp::socket>(IoService::instance().get_io_service());
+        std::shared_ptr<boost::asio::ip::tcp::socket> socket_ptr
+                = std::make_shared<boost::asio::ip::tcp::socket>(IoService::instance().get_io_service());
 
-        socket_ptr->connect(ip::tcp::endpoint(ip::address::from_string(client_setting_.serv_addr_), client_setting_.serv_port_), ec);
+        socket_ptr->connect(boost::asio::ip::tcp::endpoint(
+                                boost::asio::ip::address::from_string(client_setting_.serv_addr_), client_setting_.serv_port_), ec);
         if (ec) {
             log_err("connect to %s:%u failed with {%d} %s.",
                     client_setting_.serv_addr_.c_str(), client_setting_.serv_port_,

@@ -28,7 +28,7 @@ class TcpConnSync: public NetConn,
 public:
 
     /// Construct a connection with the given socket.
-    explicit TcpConnSync(std::shared_ptr<ip::tcp::socket> socket,
+    explicit TcpConnSync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
                          boost::asio::io_service& io_service,
                          RpcClientSetting& client_setting);
     virtual ~TcpConnSync();
@@ -60,6 +60,10 @@ public:
     }
 
 private:
+
+    virtual bool do_read() override  { SAFE_ASSERT(false); return false; }
+    virtual void read_handler(const boost::system::error_code&, size_t) override { SAFE_ASSERT(false); }
+    virtual void write_handler(const boost::system::error_code&, size_t) override { SAFE_ASSERT(false); }
 
     virtual bool do_read(Message& msg);
     bool do_read_msg(Message& msg);

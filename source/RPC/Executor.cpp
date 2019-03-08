@@ -18,7 +18,7 @@
 namespace tzrpc {
 
 
-bool Executor::init() override {
+bool Executor::init() {
 
     conf_ = service_impl_->get_executor_conf();
 

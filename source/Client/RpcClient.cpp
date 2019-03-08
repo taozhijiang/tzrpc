@@ -5,8 +5,6 @@
  *
  */
 
-#include <xtra_asio.h>
-
 #include <Client/IoService.h>
 #include <Client/RpcClientImpl.h>
 #include <Client/include/RpcClient.h>

@@ -8,8 +8,7 @@
 #ifndef __IO_SERVICE_H__
 #define __IO_SERVICE_H__
 
-#include <xtra_asio.h>
-
+#include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
 #include <mutex>
@@ -49,7 +48,7 @@ public:
 
     }
 
-    io_service& get_io_service() {
+    boost::asio::io_service& get_io_service() {
         return  io_service_;
     }
 
@@ -67,7 +66,7 @@ private:
         initialized_(false),
         io_service_thread_(),
         io_service_(),
-        work_guard_(new io_service::work(io_service_)){
+        work_guard_(new boost::asio::io_service::work(io_service_)){
     }
 
     ~IoService() {
@@ -85,11 +84,11 @@ private:
 
     // 再启一个io_service_，主要来处理定时器等常用服务
     boost::thread io_service_thread_;
-    io_service io_service_;
+    boost::asio::io_service io_service_;
 
     // io_service如果没有任务，会直接退出执行，所以需要
     // 一个强制的work来持有之
-    std::unique_ptr<io_service::work> work_guard_;
+    std::unique_ptr<boost::asio::io_service::work> work_guard_;
 
     void io_service_run() {
 

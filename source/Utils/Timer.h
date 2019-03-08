@@ -8,12 +8,13 @@
 #ifndef __UTILS_TIMER_H__
 #define __UTILS_TIMER_H__
 
-#include <xtra_asio.h>
+#include <xtra_rhel.h>
 
+#include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#include <functional>
-#include <memory>
+#include <boost/asio/steady_timer.hpp>
+using boost::asio::steady_timer;
 
 #include <Utils/EQueue.h>
 #include <Utils/Log.h>
@@ -23,6 +24,8 @@
 typedef std::function<void (const boost::system::error_code& ec)> TimerEventCallable;
 
 namespace tzrpc {
+
+using boost::asio::io_service;
 
 class TimerObject: public std::enable_shared_from_this<TimerObject> {
 public:
@@ -46,7 +49,7 @@ public:
             return false;
         }
 
-        steady_timer_->expires_from_now(boost::chrono::milliseconds(timeout_));
+        steady_timer_->expires_from_now(milliseconds(timeout_));
         steady_timer_->async_wait(
                 std::bind(&TimerObject::timer_run, shared_from_this(), std::placeholders::_1));
         return true;
@@ -60,7 +63,7 @@ public:
         }
 
         if (forever_) {
-            steady_timer_->expires_from_now(boost::chrono::milliseconds(timeout_));
+            steady_timer_->expires_from_now(milliseconds(timeout_));
             steady_timer_->async_wait(
                     std::bind(&TimerObject::timer_run, shared_from_this(), std::placeholders::_1));
         }

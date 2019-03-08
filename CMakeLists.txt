@@ -87,7 +87,7 @@ add_executable( tzrpc main.cpp setup.cpp build_version.cpp ${DIR_SRCS} )
 
 set (WHOLE_LIBS Scaffold Protocol RPC Network Utils )
 
-set (EXTRA_LIBS ${EXTRA_LIBS} ssl config++)
+set (EXTRA_LIBS ${EXTRA_LIBS} crypto ssl config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
 set (EXTRA_LIBS ${EXTRA_LIBS} boost_system boost_thread boost_chrono boost_regex)
 set (EXTRA_LIBS ${EXTRA_LIBS} protoc protobuf )

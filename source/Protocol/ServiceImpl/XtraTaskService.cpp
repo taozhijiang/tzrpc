@@ -91,12 +91,12 @@ bool XtraTaskService::handle_rpc_service_conf(const libconfig::Setting& setting)
 
 
 
-ExecutorConf XtraTaskService::get_executor_conf() override {
+ExecutorConf XtraTaskService::get_executor_conf() {
     SAFE_ASSERT(conf_ptr_);
     return conf_ptr_->executor_conf_;
 }
 
-int XtraTaskService::module_runtime(const libconfig::Config& conf) override {
+int XtraTaskService::module_runtime(const libconfig::Config& conf) {
 
     try {
 
@@ -143,7 +143,7 @@ bool XtraTaskService::handle_rpc_service_runtime_conf(const libconfig::Setting& 
     return 0;
 }
 
-int XtraTaskService::module_status(std::string& module, std::string& name, std::string& val) override {
+int XtraTaskService::module_status(std::string& module, std::string& name, std::string& val) {
 
     // empty status ...
 
@@ -151,7 +151,7 @@ int XtraTaskService::module_status(std::string& module, std::string& name, std::
 }
 
 
-void XtraTaskService::handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) override {
+void XtraTaskService::handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) {
 
     using XtraTask::OpCode;
 

@@ -14,7 +14,7 @@ using namespace ::testing;
 #include <Client/include/RpcClient.h>
 #include <Protocol/gen-cpp/XtraTask.pb.h>
 
-#include <xtra_asio.h>
+#include <boost/asio.hpp>
 using namespace boost::asio;
 
 using namespace tzrpc;

@@ -23,7 +23,7 @@ using tzrpc::kHeaderVersion;
 using tzrpc::kFixedIoBufferSize;
 using tzrpc::ShutdownType;
 
-TcpConnSync::TcpConnSync(std::shared_ptr<ip::tcp::socket> socket,
+TcpConnSync::TcpConnSync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
                          boost::asio::io_service& io_service,
                          RpcClientSetting& client_setting):
     NetConn(socket),
@@ -95,7 +95,7 @@ int TcpConnSync::parse_msg_body(Message& msg) {
 }
 
 
-bool TcpConnSync::do_read(Message& msg) override {
+bool TcpConnSync::do_read(Message& msg) {
 
     if (get_conn_stat() != ConnStat::kWorking) {
         log_err("socket status error: %d", get_conn_stat());
@@ -107,7 +107,7 @@ bool TcpConnSync::do_read(Message& msg) override {
         uint32_t bytes_read = recv_bound_.buffer_.get_length();
         boost::system::error_code ec;
         size_t bytes_transferred
-                = boost::asio::read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
+                = boost::asio::read(*socket_, boost::asio::buffer(recv_bound_.io_block_, kFixedIoBufferSize),
                                     boost::asio::transfer_at_least(sizeof(Header) - bytes_read),
                                     ec );
 
@@ -144,7 +144,7 @@ bool TcpConnSync::do_read_msg(Message& msg) {
 
         boost::system::error_code ec;
         size_t bytes_transferred
-                = boost::asio::read(*socket_, buffer(recv_bound_.io_block_, kFixedIoBufferSize),
+                = boost::asio::read(*socket_, boost::asio::buffer(recv_bound_.io_block_, kFixedIoBufferSize),
                                     boost::asio::transfer_at_least(to_read),
                                     ec);
 
@@ -166,7 +166,7 @@ bool TcpConnSync::do_read_msg(Message& msg) {
     return false;
 }
 
-bool TcpConnSync::do_write() override {
+bool TcpConnSync::do_write() {
 
     if (get_conn_stat() != ConnStat::kWorking) {
         log_err("socket status error: %d", get_conn_stat());
@@ -183,7 +183,7 @@ bool TcpConnSync::do_write() override {
 
         boost::system::error_code ec;
         size_t bytes_transferred
-                = boost::asio::write(*socket_, buffer(send_bound_.io_block_, to_write),
+                = boost::asio::write(*socket_, boost::asio::buffer(send_bound_.io_block_, to_write),
                                      boost::asio::transfer_exactly(to_write),
                                      ec);
         if (ec) {

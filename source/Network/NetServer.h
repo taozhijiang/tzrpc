@@ -8,13 +8,15 @@
 #ifndef __NETWORK_NET_SERVER_H__
 #define __NETWORK_NET_SERVER_H__
 
-#include <xtra_asio.h>
-
 #include <mutex>
 #include <libconfig.h++>
 
 #include <Utils/Log.h>
 #include <Utils/ThreadPool.h>
+
+#include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
+using boost::asio::steady_timer;
 
 namespace tzrpc {
 
@@ -116,6 +118,10 @@ private:
 
 } __attribute__ ((aligned (4)));  // end class NetConf
 
+
+
+typedef std::shared_ptr<boost::asio::ip::tcp::socket>    SocketPtr;
+
 class NetServer {
 
     friend class TcpConnAsync;
@@ -142,12 +148,12 @@ public:
         // 线程池开始工作
         io_service_threads_.start_threads();
 
-        acceptor_.reset( new ip::tcp::acceptor(io_service_) );
+        acceptor_.reset( new boost::asio::ip::tcp::acceptor(io_service_) );
         acceptor_->open(ep_.protocol());
 
-        acceptor_->set_option(ip::tcp::acceptor::reuse_address(true));
+        acceptor_->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
         acceptor_->bind(ep_);
-        acceptor_->listen(socket_base::max_connections);
+        acceptor_->listen(boost::asio::socket_base::max_connections);
 
         do_accept();
 
@@ -182,9 +188,9 @@ private:
     const std::string instance_name_;
 
     // 侦听地址信息
-    io_service io_service_;
-    ip::tcp::endpoint ep_;
-    std::unique_ptr<ip::tcp::acceptor> acceptor_;
+    boost::asio::io_service io_service_;
+    boost::asio::ip::tcp::endpoint ep_;
+    std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
 
     NetConf conf_;
 

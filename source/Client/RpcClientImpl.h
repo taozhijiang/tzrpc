@@ -8,7 +8,8 @@
 #ifndef __RPC_CLIENT_IMPL_H__
 #define __RPC_CLIENT_IMPL_H__
 
-#include <xtra_asio.h>
+#include <boost/asio/steady_timer.hpp>
+using boost::asio::steady_timer;
 
 #include <Client/LogClient.h>
 #include <Client/include/RpcClientStatus.h>
