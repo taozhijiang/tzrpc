@@ -89,6 +89,13 @@ public:
         return true;
     }
 
+
+    void threads_join() {
+        work_guard_.reset();
+        io_service_thread_.join();
+    }
+
+
     io_service& get_io_service() {
         return  io_service_;
     }
@@ -101,7 +108,17 @@ public:
         return true;
     }
 
-public:
+    // 增强版的定时器，返回TimerObject，可以控制定时器的取消
+    std::shared_ptr<TimerObject> add_better_timer(const TimerEventCallable& func, uint64_t msec, bool forever) {
+        std::shared_ptr<TimerObject> timer
+                = std::make_shared<TimerObject>(io_service_, std::move(func), msec, forever);
+
+        if (!timer || !timer->init()) {
+            log_err("create and init timer failed.");
+            timer.reset();
+        }
+        return timer;
+    }
 
 private:
 

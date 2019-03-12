@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __SCAFFOLD_MANAGER_H__
-#define __SCAFFOLD_MANAGER_H__
+#ifndef __SCAFFOLD_CAPTAIN_H__
+#define __SCAFFOLD_CAPTAIN_H__
 
 #include <string>
 #include <map>
@@ -18,9 +18,9 @@ namespace tzrpc {
 
 class NetServer;
 
-class Manager {
+class Captain {
 public:
-    static Manager& instance();
+    static Captain& instance();
 
 public:
     bool init(const std::string& cfgFile);
@@ -30,9 +30,9 @@ public:
     void service_terminate();
 
 private:
-    Manager();
+    Captain();
 
-    ~Manager() {
+    ~Captain() {
         // Singleton should not destoried normally,
         // if happens, just terminate quickly
         ::exit(0);
@@ -49,4 +49,4 @@ public:
 } // end namespace tzrpc
 
 
-#endif //__SCAFFOLD_MANAGER_H__
+#endif //__SCAFFOLD_CAPTAIN_H__

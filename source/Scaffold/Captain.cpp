@@ -19,7 +19,7 @@
 #include <Utils/Timer.h>
 
 #include <Scaffold/ConfHelper.h>
-#include <Scaffold/Manager.h>
+#include <Scaffold/Captain.h>
 
 #include <RPC/Dispatcher.h>
 #include <Protocol/Common.h>
@@ -28,20 +28,20 @@
 namespace tzrpc {
 
 // 在主线程中最先初始化，所以不考虑竞争条件问题
-Manager& Manager::instance() {
-    static Manager service;
+Captain& Captain::instance() {
+    static Captain service;
     return service;
 }
 
-Manager::Manager():
+Captain::Captain():
     initialized_(false){
 }
 
 
-bool Manager::init(const std::string& cfgFile) {
+bool Captain::init(const std::string& cfgFile) {
 
     if (initialized_) {
-        log_err("Manager already initlialized...");
+        log_err("Captain already initlialized...");
         return false;
     }
 
@@ -95,26 +95,28 @@ bool Manager::init(const std::string& cfgFile) {
     // do real service
     net_server_ptr_->service();
 
-    log_info("Manager all initialized...");
+    log_info("Captain all initialized...");
     initialized_ = true;
 
     return true;
 }
 
 
-bool Manager::service_graceful() {
+bool Captain::service_graceful() {
 
+    Timer::instance().threads_join();
     net_server_ptr_->io_service_stop_graceful();
     return true;
 }
 
-void Manager::service_terminate() {
+void Captain::service_terminate() {
     ::sleep(1);
     ::_exit(0);
 }
 
-bool Manager::service_joinall() {
+bool Captain::service_joinall() {
 
+    Timer::instance().threads_join();
     net_server_ptr_->io_service_join();
     return true;
 }

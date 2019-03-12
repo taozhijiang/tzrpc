@@ -8,7 +8,7 @@
 #include <Utils/Log.h>
 #include <Utils/SslSetup.h>
 
-#include <Scaffold/Manager.h>
+#include <Scaffold/Captain.h>
 
 void init_signal_handle();
 void usage();
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    (void)tzrpc::Manager::instance(); // create object first!
+    (void)tzrpc::Captain::instance(); // create object first!
 
     create_process_pid();
     init_signal_handle();
@@ -93,8 +93,8 @@ int main(int argc, char* argv[]) {
 
 
     {
-        PUT_RAII_PERF_COUNTER(Manager_init);
-        if(!tzrpc::Manager::instance().init(cfgFile)) {
+        PUT_RAII_PERF_COUNTER(Captain_init);
+        if(!tzrpc::Captain::instance().init(cfgFile)) {
             tzrpc::log_err("system manager init error!");
             ::exit(EXIT_FAILURE);
         }
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
     tzrpc::log_info("service started at %s", mbstr);
 
     tzrpc::log_notice("whole service initialized ok!");
-    tzrpc::Manager::instance().service_joinall();
+    tzrpc::Captain::instance().service_joinall();
 
     tzrpc::Ssl_thread_clean();
 

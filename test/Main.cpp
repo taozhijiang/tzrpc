@@ -10,7 +10,6 @@
 #include <Utils/SslSetup.h>
 
 #include <Scaffold/ConfHelper.h>
-#include <Scaffold/Manager.h>
 
 using namespace tzrpc;
 
