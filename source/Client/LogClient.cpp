@@ -5,7 +5,7 @@
  *
  */
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 
 #include <vector>
 #include <boost/algorithm/string.hpp>
@@ -32,11 +32,14 @@ bool log_init(int log_level) {
 
     openlog(program_invocation_short_name, LOG_PID , LOG_LOCAL6);
     setlogmask (LOG_UPTO (log_level));
+
+    log_notice("initialize syslog to LOG_LOCAL6, with level: %d",  log_level);
     return true;
 }
 
 void log_close() {
 
+    log_notice("closing rsyslog...");
     closelog();
 }
 

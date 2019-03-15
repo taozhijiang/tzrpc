@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 2.8.11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x " )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wpointer-arith -Wwrite-strings -Werror=format -march=native " )
 
+# 精简日志
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__FILENAME__=\"$(notdir $<)\" " )
 
 ####################
 ### 修改编译选项 ###
@@ -27,7 +29,7 @@ ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 # mysqlcppconn如果使用C开发会在释放的时候段错误
 
-set (PROTOBUF_GEN_CMD "cp -fr ${PROJECT_SOURCE_DIR}/deps/xtra_rhel6.x/bin/protoc-2.5.0 ${PROJECT_SOURCE_DIR}/bin/protoc && chmod a+x ${PROJECT_SOURCE_DIR}/bin/protoc && cd ${CMAKE_CURRENT_SOURCE_DIR}/source/Protocol/source && rm -fr ../gen-cpp && mkdir -p ../gen-cpp && make ")
+set (PROTOBUF_GEN_CMD "cp -fr ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/bin/protoc-2.5.0 ${PROJECT_SOURCE_DIR}/bin/protoc && chmod a+x ${PROJECT_SOURCE_DIR}/bin/protoc && cd ${CMAKE_CURRENT_SOURCE_DIR}/source/Protocol/source && rm -fr ../gen-cpp && mkdir -p ../gen-cpp && make ")
 exec_program(${PROTOBUF_GEN_CMD})
 
 # 拷贝重要文件供创建客户端库使用
@@ -49,8 +51,8 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 set (INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/include/
         ${PROJECT_SOURCE_DIR}/source/
-        ${PROJECT_SOURCE_DIR}/deps/xtra_rhel6.x/include/
-        ${PROJECT_SOURCE_DIR}/deps/xtra_rhel6.x/include/google/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/include/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/include/google/
 )
 include_directories( ${INCLUDE_DIRS} )
 	
@@ -65,10 +67,10 @@ add_subdirectory( source/Client)
 
 link_directories(
         /usr/lib64/mysql/
-        ${PROJECT_SOURCE_DIR}/deps/xtra_rhel6.x/libs/
-        ${PROJECT_SOURCE_DIR}/deps/xtra_rhel6.x/libs/boost/
-        ${PROJECT_SOURCE_DIR}/deps/xtra_rhel6.x/libs/google/
-        ${PROJECT_SOURCE_DIR}/deps/xtra_rhel6.x/libs/google/protobuf-2.5.0/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/boost/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/google/
+        ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/libs/google/protobuf-2.5.0/
 )
 
 # local temp generated file
@@ -76,15 +78,15 @@ exec_program( "export BUILD_VAR=`git log -1 --pretty=%H` && echo 'const char *bu
 exec_program( "export BUILD_VAR=`git symbolic-ref HEAD` && echo 'const char *build_commit_branch = \"VCS: Branch:' $BUILD_VAR '\";' >> build_version.cpp ")
 exec_program( "export BUILD_VAR=`git log -1 --pretty=%cd` && echo 'const char *build_commit_date = \"VCS: Date:' $BUILD_VAR '\";' >> build_version.cpp ")
 exec_program( "export BUILD_VAR=`git log -1 --pretty=\"%an %ae\"` && echo 'const char *build_commit_author = \"VCS: Author:' $BUILD_VAR '\";' >> build_version.cpp ")
-exec_program( "export BUILD_VAR=`date` && echo 'const char *build_time = \"Build At:' $BUILD_VAR '\";' >> build_version.cpp ")
+exec_program( "export BUILD_VAR=`date +%F` && echo 'const char *build_time = \"Build At:' $BUILD_VAR '\";' >> build_version.cpp ")
 
-add_executable( tzrpc main.cpp build_version.cpp ${DIR_SRCS} )
+add_executable( tzrpc main.cpp setup.cpp build_version.cpp ${DIR_SRCS} )
 
 # ld iconv ?
 
 set (WHOLE_LIBS Scaffold Protocol RPC Network Utils )
 
-set (EXTRA_LIBS ${EXTRA_LIBS} ssl config++)
+set (EXTRA_LIBS ${EXTRA_LIBS} crypto ssl config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
 set (EXTRA_LIBS ${EXTRA_LIBS} boost_system boost_thread boost_chrono boost_regex)
 set (EXTRA_LIBS ${EXTRA_LIBS} protoc protobuf )

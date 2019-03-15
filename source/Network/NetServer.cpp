@@ -5,7 +5,7 @@
  *
  */
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 
 #include <Network/NetServer.h>
 #include <Network/TcpConnAsync.h>
@@ -16,6 +16,7 @@
 
 namespace tzrpc {
 
+
 bool NetConf::load_conf(std::shared_ptr<libconfig::Config> conf_ptr) {
     const auto& conf = *conf_ptr;
     return load_conf(conf);
@@ -23,18 +24,16 @@ bool NetConf::load_conf(std::shared_ptr<libconfig::Config> conf_ptr) {
 
 bool NetConf::load_conf(const libconfig::Config& conf) {
 
-    int listen_port = 0;
-    ConfUtil::conf_value(conf, "rpc_network.bind_addr", bind_addr_);
-    ConfUtil::conf_value(conf, "rpc_network.listen_port", listen_port);
-    if (bind_addr_.empty() || listen_port <=0 ){
-        log_err( "invalid rpc_network.bind_addr %s & http.listen_port %d",
-                  bind_addr_.c_str(), listen_port);
+    conf.lookupValue("rpc.network.bind_addr", bind_addr_);
+    conf.lookupValue("rpc.network.bind_port", bind_port_);
+    if (bind_addr_.empty() || bind_port_ <=0 ){
+        log_err( "invalid rpc.network. bind_addr %s & bind_port %d",
+                  bind_addr_.c_str(), bind_port_);
         return false;
     }
-    listen_port_ = static_cast<unsigned short>(listen_port);
 
     std::string ip_list;
-    ConfUtil::conf_value(conf, "rpc_network.safe_ip", ip_list);
+    conf.lookupValue("rpc.network.safe_ip", ip_list);
     if (!ip_list.empty()) {
         std::vector<std::string> ip_vec;
         std::set<std::string> ip_set;
@@ -49,60 +48,62 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
 
         std::swap(ip_set, safe_ip_);
     }
+
     if (!safe_ip_.empty()) {
         log_alert("safe_ip not empty, totally contain %d items",
-                          static_cast<int>(safe_ip_.size()));
+                  static_cast<int>(safe_ip_.size()));
     }
 
-    ConfUtil::conf_value(conf, "rpc_network.backlog_size", backlog_size_);
+    conf.lookupValue("rpc.network.backlog_size", backlog_size_);
     if (backlog_size_ < 0) {
-        log_err( "invalid rpc_network.backlog_size %d.", backlog_size_);
+        log_err( "invalid rpc.network.backlog_size %d.", backlog_size_);
         return false;
     }
 
-    ConfUtil::conf_value(conf, "rpc_network.io_thread_pool_size", io_thread_number_);
+    conf.lookupValue("rpc.network.io_thread_pool_size", io_thread_number_);
     if (io_thread_number_ < 0) {
-        log_err( "invalid rpc_network.io_thread_number %d", io_thread_number_);
+        log_err( "invalid rpc.network.io_thread_number %d", io_thread_number_);
         return false;
     }
 
-    // other http parameters
-    int value_i;
-
-    ConfUtil::conf_value(conf, "rpc_network.ops_cancel_time_out", value_i);
-    if (value_i < 0){
-        log_err("invalid rpc_network.ops_cancel_time_out value.");
+    conf.lookupValue("rpc.network.ops_cancel_time_out", ops_cancel_time_out_);
+    if (ops_cancel_time_out_ < 0){
+        log_err("invalid rpc.network.ops_cancel_time_out %d.", ops_cancel_time_out_);
         return false;
     }
-    ops_cancel_time_out_ = value_i;
 
-    ConfUtil::conf_value(conf, "rpc_network.session_cancel_time_out", value_i);
-    if (value_i < 0){
-        log_err("invalid rpc_network.session_cancel_time_out value.");
+    conf.lookupValue("rpc.network.session_cancel_time_out", session_cancel_time_out_);
+    if (session_cancel_time_out_ < 0){
+        log_err("invalid rpc.network.session_cancel_time_out %d.", session_cancel_time_out_);
         return false;
     }
-    session_cancel_time_out_ = value_i;
 
-    bool value_b;
-    ConfUtil::conf_value(conf, "rpc_network.service_enable", value_b, true);
-    ConfUtil::conf_value(conf, "rpc_network.service_speed", value_i);
-    if (value_i < 0){
-        log_err("invalid rpc_network.service_speed value %d.", value_i);
+    conf.lookupValue("rpc.network.service_enable", service_enabled_);
+    conf.lookupValue("rpc.network.service_speed", service_speed_);
+    if (service_speed_ < 0){
+        log_err("invalid rpc.network.service_speed value %d.", service_speed_);
         return false;
     }
-    service_enabled_ = value_b;
-    service_speed_ = value_i;
+
+    conf.lookupValue("rpc.network.service_concurrency", service_concurrency_);
+    if (service_concurrency_ < 0){
+        log_err("invalid rpc.network.service_concurrency value %d.", service_concurrency_);
+        return false;
+    }
 
     // 如果是0，就不限制
-    ConfUtil::conf_value(conf, "rpc_network.max_msg_size", value_i);
-    if (value_i != 0 && value_i <= 32 /*actual sizeof RpcRequestMessage, RpcResponseMessage*/){
-        log_err("invalid rpc_network.max_msg_size value.");
+    conf.lookupValue("rpc.network.send_max_msg_size", send_max_msg_size_);
+    conf.lookupValue("rpc.network.recv_max_msg_size", recv_max_msg_size_);
+    /*actual sizeof RpcRequestMessage, RpcResponseMessage*/
+    if ( (send_max_msg_size_!= 0 && send_max_msg_size_ <= 32 ) ||
+         (recv_max_msg_size_!= 0 && recv_max_msg_size_ <= 32 ) )
+    {
+        log_err("invalid rpc_network.send,recv max_msg_size %d, %d.",
+                send_max_msg_size_, recv_max_msg_size_);
         return false;
     }
-    max_msg_size_ = value_i;
 
     log_debug("NetConf parse conf OK!");
-
     return true;
 }
 
@@ -118,7 +119,7 @@ void NetConf::timed_feed_token_handler(const boost::system::error_code& ec) {
     feed_service_token();
 
     // 再次启动定时器
-    timed_feed_token_->expires_from_now(boost::chrono::seconds(1)); // 1sec
+    timed_feed_token_->expires_from_now(seconds(1)); // 1sec
     timed_feed_token_->async_wait(
                 std::bind(&NetConf::timed_feed_token_handler, this, std::placeholders::_1));
 }
@@ -135,9 +136,10 @@ bool NetServer::init() {
         return false;
     }
 
-    ep_ = ip::tcp::endpoint(ip::address::from_string(conf_.bind_addr_), conf_.listen_port_);
+    // 上面的conf_参数已经经过合法性的检验了
+    ep_ = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(conf_.bind_addr_), conf_.bind_port_);
     log_alert("create listen endpoint for %s:%d",
-                      conf_.bind_addr_.c_str(), conf_.listen_port_);
+                      conf_.bind_addr_.c_str(), conf_.bind_port_);
 
     log_debug("socket/session conn cancel time_out: %d secs, enabled: %s",
                       conf_.ops_cancel_time_out_,
@@ -150,12 +152,12 @@ bool NetServer::init() {
             return false;
         }
 
-        conf_.timed_feed_token_->expires_from_now(boost::chrono::seconds(1));
+        conf_.timed_feed_token_->expires_from_now(seconds(1));
         conf_.timed_feed_token_->async_wait(
                     std::bind(&NetConf::timed_feed_token_handler, &conf_, std::placeholders::_1));
     }
 
-    log_debug("rpc_network service enabled: %s, speed: %ld tps",
+    log_debug("rpc.network service enabled: %s, speed: %d tps",
               conf_.service_enabled_ ? "true" : "false",
               conf_.service_speed_);
 
@@ -167,13 +169,14 @@ bool NetServer::init() {
     }
 
     // 注册配置动态更新的回调函数
-    ConfHelper::instance().register_conf_callback(
-            std::bind(&NetServer::update_runtime_conf, this,
+    ConfHelper::instance().register_runtime_callback(
+            "NetServer",
+            std::bind(&NetServer::module_runtime, this,
                       std::placeholders::_1));
 
     // 系统状态展示相关的初始化
     Status::instance().register_status_callback(
-            "net_server",
+            "NetServer",
             std::bind(&NetServer::module_status, this,
                       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
@@ -183,7 +186,7 @@ bool NetServer::init() {
 // accept stuffs
 void NetServer::do_accept() {
 
-    SocketPtr sock_ptr(new ip::tcp::socket(io_service_));
+    SocketPtr sock_ptr(new boost::asio::ip::tcp::socket(io_service_));
     acceptor_->async_accept(*sock_ptr,
                        std::bind(&NetServer::accept_handler, this,
                                    std::placeholders::_1, sock_ptr));
@@ -208,6 +211,33 @@ void NetServer::accept_handler(const boost::system::error_code& ec, SocketPtr so
 
         std::string remote_ip = remote.address().to_string(ignore_ec);
         log_debug("remote Client Info: %s:%d", remote_ip.c_str(), remote.port());
+
+
+        if (!conf_.check_safe_ip(remote_ip)) {
+            log_err("check safe_ip failed for: %s", remote_ip.c_str());
+
+            sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
+            sock_ptr->close(ignore_ec);
+            break;
+        }
+
+        if (!conf_.get_service_token()) {
+            log_err("request network service token failed, enabled: %s, speed: %d",
+                    conf_.service_enabled_ ? "true" : "false", conf_.service_speed_);
+
+            sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
+            sock_ptr->close(ignore_ec);
+            break;
+        }
+
+        if (conf_.service_concurrency_ != 0 &&
+            conf_.service_concurrency_ < TcpConnAsync::current_concurrency_) {
+            log_err("service_concurrency_ error, limit: %d, current: %d",
+                    conf_.service_concurrency_, TcpConnAsync::current_concurrency_.load());
+            sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
+            sock_ptr->close(ignore_ec);
+            break;
+        }
 
         TcpConnAsyncPtr new_conn = std::make_shared<TcpConnAsync>(sock_ptr, *this);
         new_conn->start();
@@ -252,15 +282,15 @@ void NetServer::io_service_run(ThreadObjPtr ptr) {
 
 
 
-int NetServer::module_status(std::string& strModule, std::string& strKey, std::string& strValue) {
+int NetServer::module_status(std::string& module, std::string& name, std::string& val) {
 
-    strModule = "tzrpc";
-    strKey = "net_server";
+    module = "tzrpc";
+    name = "NetServer";
 
     std::stringstream ss;
 
     ss << "\t" << "instance_name: " << instance_name_ << std::endl;
-    ss << "\t" << "service_addr: " << conf_.bind_addr_ << "@" << conf_.listen_port_ << std::endl;
+    ss << "\t" << "service_addr: " << conf_.bind_addr_ << "@" << conf_.bind_port_ << std::endl;
     ss << "\t" << "backlog_size: " << conf_.backlog_size_ << std::endl;
     ss << "\t" << "io_thread_pool_size: " << conf_.io_thread_number_ << std::endl;
     ss << "\t" << "safe_ips: " ;
@@ -278,15 +308,16 @@ int NetServer::module_status(std::string& strModule, std::string& strKey, std::s
 
     ss << "\t" << "service_enabled: " << (conf_.service_enabled_  ? "true" : "false") << std::endl;
     ss << "\t" << "service_speed_limit(tps): " << conf_.service_speed_ << std::endl;
+    ss << "\t" << "service_concurrency: " << conf_.service_concurrency_ << std::endl;
     ss << "\t" << "session_cancel_time_out: " << conf_.session_cancel_time_out_ << std::endl;
     ss << "\t" << "ops_cancel_time_out: " << conf_.ops_cancel_time_out_ << std::endl;
 
-    strValue = ss.str();
+    val = ss.str();
     return 0;
 }
 
 
-int NetServer::update_runtime_conf(const libconfig::Config& cfg) {
+int NetServer::module_runtime(const libconfig::Config& cfg) {
 
     NetConf conf {};
     if (!conf.load_conf(cfg)) {
@@ -306,17 +337,16 @@ int NetServer::update_runtime_conf(const libconfig::Config& cfg) {
         conf_.ops_cancel_time_out_ = conf.ops_cancel_time_out_;
     }
 
-
-    log_notice("swap safe_ips...");
-
     {
+        log_notice("swap safe_ips...");
+
         // protect cfg race conditon
         std::lock_guard<std::mutex> lock(conf_.lock_);
         conf_.safe_ip_.swap(conf.safe_ip_);
     }
 
     if (conf_.service_speed_ != conf.service_speed_) {
-        log_notice("update http_service_speed from %ld to %ld",
+        log_notice("update service_speed from %d to %d",
                    conf_.service_speed_, conf.service_speed_);
         conf_.service_speed_ = conf.service_speed_;
 
@@ -330,7 +360,7 @@ int NetServer::update_runtime_conf(const libconfig::Config& cfg) {
                 return -1;
             }
 
-            conf_.timed_feed_token_->expires_from_now(boost::chrono::seconds(1));
+            conf_.timed_feed_token_->expires_from_now(seconds(1));
             conf_.timed_feed_token_->async_wait(
                         std::bind(&NetConf::timed_feed_token_handler, &conf_, std::placeholders::_1));
         }
@@ -347,6 +377,16 @@ int NetServer::update_runtime_conf(const libconfig::Config& cfg) {
     log_notice("service enabled: %s, speed: %d",
                conf_.service_enabled_ ? "true" : "false",
                conf_.service_speed_);
+
+    if (conf_.service_concurrency_ != conf.service_concurrency_ ) {
+        log_err("update service_concurrency from %d to %d.",
+                conf_.service_concurrency_, conf.service_concurrency_);
+        conf_.service_concurrency_ = conf.service_concurrency_;
+    }
+
+    if (conf_.service_concurrency_ != 0) {
+        log_notice("service_concurrency: %d",  conf_.service_concurrency_);
+    }
 
     return 0;
 }

@@ -8,13 +8,12 @@
 #ifndef __UTILS_TIMER_H__
 #define __UTILS_TIMER_H__
 
-#include <xtra_asio.h>
+#include <xtra_rhel.h>
 
-#include <boost/thread.hpp>
-#include <boost/noncopyable.hpp>
+#include <boost/asio.hpp>
 
-#include <functional>
-#include <memory>
+#include <boost/asio/steady_timer.hpp>
+using boost::asio::steady_timer;
 
 #include <Utils/EQueue.h>
 #include <Utils/Log.h>
@@ -25,10 +24,10 @@ typedef std::function<void (const boost::system::error_code& ec)> TimerEventCall
 
 namespace tzrpc {
 
-class TimerObject: public boost::noncopyable,
-                   public std::enable_shared_from_this<TimerObject> {
+class TimerObject: public std::enable_shared_from_this<TimerObject> {
+
 public:
-    TimerObject(io_service& ioservice,
+    TimerObject(boost::asio::io_service& ioservice,
                 const TimerEventCallable& func, uint64_t msec,
                 bool forever):
         io_service_(ioservice),
@@ -39,44 +38,37 @@ public:
     }
 
     ~TimerObject() {
-        log_err("Good, Timer released...");
+        log_debug("Good, Timer released...");
     }
 
-    bool init() {
-        steady_timer_.reset(new steady_timer(io_service_));
-        if (!steady_timer_) {
-            return false;
-        }
 
-        steady_timer_->expires_from_now(boost::chrono::milliseconds(timeout_));
-        steady_timer_->async_wait(
-                std::bind(&TimerObject::timer_run, shared_from_this(), std::placeholders::_1));
-        return true;
-    }
+    // 禁止拷贝
+    TimerObject(const TimerObject&) = delete;
+    TimerObject& operator=(const TimerObject&) = delete;
 
-    void timer_run(const boost::system::error_code& ec) {
-        if (func_) {
-            func_(ec);
-        } else {
-            log_err("critical, func not initialized");
-        }
 
-        if (forever_) {
-            steady_timer_->expires_from_now(boost::chrono::milliseconds(timeout_));
-            steady_timer_->async_wait(
-                    std::bind(&TimerObject::timer_run, shared_from_this(), std::placeholders::_1));
-        }
+    bool init();
+    bool cancel() {
+
+        return false;
     }
 
 private:
-    io_service& io_service_;
+    void timer_run(const boost::system::error_code& ec);
+
+private:
+    boost::asio::io_service& io_service_;
     std::unique_ptr<steady_timer> steady_timer_;
     TimerEventCallable func_;
     uint64_t timeout_;
     bool forever_;
 };
 
-class Timer: public boost::noncopyable {
+
+
+// 注意，这里的Timer不持有任何TimerObject对象的智能指针，
+//      TimerObject完全是依靠shared_from_this()自持有的
+class Timer {
 
 public:
     static Timer& instance();
@@ -88,41 +80,47 @@ public:
         return true;
     }
 
-    io_service& get_io_service() {
+    void threads_join() {
+		work_guard_.reset();
+        io_service_thread_.join();
+    }
+
+    boost::asio::io_service& get_io_service() {
         return  io_service_;
     }
 
-    bool add_timer(const TimerEventCallable& func, uint64_t msec, bool forever) {
-        std::shared_ptr<TimerObject> timer = std::make_shared<TimerObject>(io_service_, std::move(func), msec, forever);
-        if (!timer || !timer->init()) {
-            return false;
-        }
-        return true;
-    }
 
-public:
+    // 增强版的定时器，返回TimerObject，可以控制定时器的取消
+    bool add_timer(const TimerEventCallable& func, uint64_t msec, bool forever);
+    std::shared_ptr<TimerObject> add_better_timer(const TimerEventCallable& func, uint64_t msec, bool forever);
+
 
 private:
 
     Timer():
         io_service_thread_(),
         io_service_(),
-        work_guard_(new io_service::work(io_service_)){
+        work_guard_(new boost::asio::io_service::work(io_service_)){
     }
 
     ~Timer() {
+        io_service_.stop();
         work_guard_.reset();
     }
+
+    // 禁止拷贝
+    Timer(const Timer&) = delete;
+    Timer& operator=(const Timer&) = delete;
 
 
     // 再启一个io_service_，主要使用Timer单例和boost::asio异步框架
     // 来处理定时器等常用服务
     boost::thread io_service_thread_;
-    io_service io_service_;
+    boost::asio::io_service io_service_;
 
     // io_service如果没有任务，会直接退出执行，所以需要
     // 一个强制的work来持有之
-    std::unique_ptr<io_service::work> work_guard_;
+    std::unique_ptr<boost::asio::io_service::work> work_guard_;
 
     void io_service_run() {
 
@@ -135,6 +133,7 @@ private:
         io_service_.run(ec);
 
         log_notice("Timer io_service thread terminated ...");
+        log_notice("error_code: {%d} %s", ec.value(), ec.message().c_str());
     }
 
 };

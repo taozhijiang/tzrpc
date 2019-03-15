@@ -9,8 +9,7 @@
 #ifndef __RPC_EXECUTOR_H__
 #define __RPC_EXECUTOR_H__
 
-#include <xtra_rhel6.h>
-#include <xtra_asio.h>
+#include <xtra_rhel.h>
 
 #include <Utils/Log.h>
 #include <Utils/EQueue.h>
@@ -43,8 +42,8 @@ public:
     }
 
     bool init();
-    int update_runtime_conf(const libconfig::Config& conf);
-    int module_status(std::string& strModule, std::string& strKey, std::string& strValue);
+    int module_runtime(const libconfig::Config& conf);
+    int module_status(std::string& module, std::string& name, std::string& val);
 
 private:
     std::shared_ptr<Service> service_impl_;

@@ -9,8 +9,8 @@
 #define __RPC_SERVICE_H__
 
 #include <libconfig.h++>
-#include <boost/noncopyable.hpp>
 
+#include <memory>
 #include <string>
 
 // real rpc should implement this interface class
@@ -30,11 +30,15 @@ struct ExecutorConf {
 };
 
 
-class Service: public boost::noncopyable {
+class Service {
 
 public:
     Service() {}
     ~Service() {}
+
+    // 禁止拷贝
+    Service(const Service&) = delete;
+    Service& operator=(const Service&) = delete;
 
     // 根据opCode分发rpc请求的处理
     virtual void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) = 0;
@@ -43,8 +47,8 @@ public:
     virtual bool init() = 0;
 
     virtual ExecutorConf get_executor_conf() = 0;
-    virtual int update_runtime_conf(const libconfig::Config& conf) = 0;
-    virtual int module_status(std::string& strModule, std::string& strKey, std::string& strValue) = 0;
+    virtual int module_runtime(const libconfig::Config& conf) = 0;
+    virtual int module_status(std::string& module, std::string& name, std::string& val) = 0;
 
 };
 

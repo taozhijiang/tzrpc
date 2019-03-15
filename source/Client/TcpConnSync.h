@@ -20,32 +20,50 @@ using tzrpc::IOBound;
 using tzrpc::ConnStat;
 class RpcClientSetting;
 
-class TcpConnSync: public NetConn, public boost::noncopyable,
+class TcpConnSync: public NetConn,
                    public std::enable_shared_from_this<TcpConnSync> {
+
+    friend class RpcClientImpl;
 
 public:
 
     /// Construct a connection with the given socket.
-    explicit TcpConnSync(std::shared_ptr<ip::tcp::socket> socket,
+    explicit TcpConnSync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
                          boost::asio::io_service& io_service,
-                         const RpcClientSetting& client_setting);
+                         RpcClientSetting& client_setting);
     virtual ~TcpConnSync();
+
+    // 禁止拷贝
+    TcpConnSync(const TcpConnSync&) = delete;
+    TcpConnSync& operator=(const TcpConnSync&) = delete;
 
     bool recv_net_message(Message& msg) {
         return do_read(msg);
     }
 
     bool send_net_message(const Message& msg) {
+        if (client_setting_.send_max_msg_size_ != 0 &&
+            msg.header_.length > client_setting_.send_max_msg_size_)
+        {
+            log_err("send_max_msg_size %d, but we recv %d",
+            static_cast<int>(client_setting_.send_max_msg_size_), static_cast<int>(msg.header_.length));
+            return false;
+        }
         send_bound_.buffer_.append(msg);
         return do_write();
     }
 
-    void shutdown_socket() {
-        ops_cancel();
-        sock_close();
+    // between shutdown and close on a socket is the behavior when the socket is shared by other processes.
+    // A shutdown() affects all copies of the socket while close() affects only the file descriptor in one process.
+    void shutdown_and_close_socket() {
+        sock_shutdown_and_close(tzrpc::ShutdownType::kBoth);
     }
 
 private:
+
+    virtual bool do_read() override  { SAFE_ASSERT(false); return false; }
+    virtual void read_handler(const boost::system::error_code&, size_t) override { SAFE_ASSERT(false); }
+    virtual void write_handler(const boost::system::error_code&, size_t) override { SAFE_ASSERT(false); }
 
     virtual bool do_read(Message& msg);
     bool do_read_msg(Message& msg);
@@ -54,31 +72,10 @@ private:
     int parse_header();
     int parse_msg_body(Message& msg);
 
-    void set_ops_cancel_timeout();
-    void revoke_ops_cancel_timeout();
-    bool was_ops_cancelled() {
-        std::lock_guard<std::mutex> lock(ops_cancel_mutex_);
-        return was_cancelled_;
-    }
-
-    bool ops_cancel() {
-        std::lock_guard<std::mutex> lock(ops_cancel_mutex_);
-        sock_cancel();
-        set_conn_stat(ConnStat::kError);
-        was_cancelled_ = true;
-        return was_cancelled_;
-    }
-
-    void ops_cancel_timeout_call(const boost::system::error_code& ec);
-
 private:
 
-    const RpcClientSetting& client_setting_;
+    RpcClientSetting& client_setting_;
     boost::asio::io_service& io_service_;
-
-    bool was_cancelled_;
-    std::mutex ops_cancel_mutex_;
-    std::unique_ptr<steady_timer> ops_cancel_timer_;
 
     // http://www.boost.org/doc/libs/1_44_0/doc/html/boost_asio/reference/error__basic_errors.html
     bool handle_socket_ec(const boost::system::error_code& ec);

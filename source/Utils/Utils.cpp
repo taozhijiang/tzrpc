@@ -61,7 +61,7 @@ void backtrace_init() {
 }
 
 
-void COUNT_FUNC_PERF::display_info(const std::string& env, int64_t time_ms, int64_t time_us) {
+void RAII_PERF_COUNTER::display_info(const std::string& env, int64_t time_ms, int64_t time_us) {
     log_debug("%s, %s perf: %ld.%ld ms", env_.c_str(), key_.c_str(), time_ms, time_us);
 }
 

@@ -10,7 +10,7 @@
 
 #include <sys/time.h>
 
-#include <xtra_rhel6.h>
+#include <xtra_rhel.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
@@ -32,15 +32,16 @@ std::string convert_to_string(const T& arg) {
 
 
 
-struct COUNT_FUNC_PERF: public boost::noncopyable {
+struct RAII_PERF_COUNTER {
 
-    COUNT_FUNC_PERF(const std::string env, const std::string key):
-    env_(env), key_(key) {
+    RAII_PERF_COUNTER(const std::string env, const std::string key):
+        env_(env),
+        key_(key) {
         ::gettimeofday(&start_, NULL);
     }
 
-    ~COUNT_FUNC_PERF() {
-        struct timeval end;
+    ~RAII_PERF_COUNTER() {
+        struct timeval end {};
         ::gettimeofday(&end, NULL);
 
         int64_t time_ms = ( 1000000 * ( end.tv_sec - start_.tv_sec ) + end.tv_usec - start_.tv_usec ) / 1000; // ms
@@ -48,6 +49,10 @@ struct COUNT_FUNC_PERF: public boost::noncopyable {
 
         display_info(env_, time_ms, time_us);
     }
+
+    // 禁止拷贝
+    RAII_PERF_COUNTER(const RAII_PERF_COUNTER&) = delete;
+    RAII_PERF_COUNTER& operator=(const RAII_PERF_COUNTER&) = delete;
 
     void display_info(const std::string& env, int64_t time_ms, int64_t time_us);
 
@@ -59,9 +64,9 @@ private:
 
 } // end namespace tzrpc
 
-#define PUT_COUNT_FUNC_PERF(T) \
-                tzrpc::COUNT_FUNC_PERF PERF_CHECKER_##T( boost::str(boost::format("%s(%ld):%s") % __FILE__%__LINE__%BOOST_CURRENT_FUNCTION), #T ); \
-                (void) PERF_CHECKER_##T
+#define PUT_RAII_PERF_COUNTER(T) \
+    tzrpc::RAII_PERF_COUNTER __RAII_PERF_CHECKER_##T( boost::str(boost::format("%s(%ld):%s") % __FILE__%__LINE__%BOOST_CURRENT_FUNCTION), #T ); \
+    (void) __RAII_PERF_CHECKER_##T
 
 
 #endif // __UTILS_UTILS_H__

@@ -34,17 +34,18 @@ enum class RpcClientStatus: uint8_t {
 
     INVALID_REQUEST = 4,
 
+    SYSTEM_ERROR    = 5,
     // 以上部分是和服务端相互兼容的
 
     // 未发送网络请求，客户端可以考虑重发
-    NETWORK_BEFORE_ERROR = 5,
-    NETWORK_CONNECT_ERROR = 6,
+    NETWORK_BEFORE_ERROR  = 10,
+    NETWORK_CONNECT_ERROR = 11,
 
-    // 实际可能操作了网络部分
-    NETWORK_SEND_ERROR = 7,
-    NETWORK_RECV_ERROR = 8,
+    NETWORK_SEND_ERROR    = 12,
+    NETWORK_RECV_ERROR    = 13,
 
-    RECV_FORMAT_ERROR = 9,      // 接收的报文解析错误
+    RPC_CALL_TIMEOUT      = 20,
+    RECV_FORMAT_ERROR     = 21,      // 接收的报文解析错误
 
 };
 

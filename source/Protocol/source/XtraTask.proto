@@ -27,6 +27,11 @@ message XtraReadOps {
         }
         optional Echo echo      = 5;
 
+        // Timeout
+        message Timeout {
+            required int32 timeout = 1;
+        }
+        optional Timeout timeout = 6;
     }
 
     // 所有响应报文
@@ -49,6 +54,12 @@ message XtraReadOps {
             required string msg = 1;
         }
         optional Echo echo      = 5;
+
+        // Timeout
+        message Timeout {
+            required string timeout = 1;
+        }
+        optional Timeout timeout = 6;
 
     }
 }

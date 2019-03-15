@@ -24,6 +24,22 @@ namespace tzrpc {
 
 struct StrUtil {
 
+    static const int kMaxBuffSize = 2*8190;
+    static std::string str_format(const char * fmt, ...) {
+
+        char buff[kMaxBuffSize + 1] = {0, };
+        uint32_t n = 0;
+
+        va_list ap;
+        va_start(ap, fmt);
+        n += vsnprintf(buff, kMaxBuffSize, fmt, ap);
+        va_end(ap);
+        buff[n] = '\0';
+
+        return std::string(buff, n);
+    }
+
+
     static size_t trim_whitespace(std::string& str) {
 
         size_t index = 0;
@@ -75,54 +91,6 @@ struct StrUtil {
         }
         return host;
     }
-};
-
-
-
-struct ConfUtil {
-
-    template<typename T>
-    static bool conf_value(const libconfig::Config& conf, const std::string& key, T& value) {
-        T t{};  // default value
-        if (!conf.lookupValue(key, value)) {
-            log_err("conf %s not found, using construct default value.", key.c_str());
-            value = t;
-            return false;
-        }
-        return true;
-    }
-
-    template<typename T>
-    static bool conf_value(const libconfig::Config& conf, const std::string& key, T& value, const T& def_value) {
-        if (!conf.lookupValue(key, value)) {
-            log_err("conf %s not found, using provided default value.", key.c_str());
-            value = def_value;
-            return false;
-        }
-        return true;
-    }
-
-    template<typename T>
-    static bool conf_value(const libconfig::Setting& conf, const std::string& key, T& value) {
-        T t{};  // default value
-        if (!conf.lookupValue(key, value)) {
-            log_err("conf %s not found, using construct default value.", key.c_str());
-            value = t;
-            return false;
-        }
-        return true;
-    }
-
-    template<typename T>
-    static bool conf_value(const libconfig::Setting& conf, const std::string& key, T& value, const T& def_value) {
-        if (!conf.lookupValue(key, value)) {
-            log_err("conf %s not found, using provided default value.", key.c_str());
-            value = def_value;
-            return false;
-        }
-        return true;
-    }
-
 };
 
 

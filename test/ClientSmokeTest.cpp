@@ -4,18 +4,17 @@
 #include <gmock/gmock.h>
 using namespace ::testing;
 
-#include <Utils/Log.h>
-
 #include <Core/Message.h>
 #include <Core/Buffer.h>
 #include <Scaffold/ConfHelper.h>
 
 #include <Protocol/Common.h>
 
+#include <Client/LogClient.h>
 #include <Client/include/RpcClient.h>
 #include <Protocol/gen-cpp/XtraTask.pb.h>
 
-#include <xtra_asio.h>
+#include <boost/asio.hpp>
 using namespace boost::asio;
 
 using namespace tzrpc;
@@ -34,9 +33,8 @@ TEST(ClientSmokeTest, ClientConnTest) {
 
     std::string addr_ip;
     int         bind_port;
-    ConfUtil::conf_value(*conf_ptr, "rpc_network.bind_addr", addr_ip);
-    ConfUtil::conf_value(*conf_ptr, "rpc_network.listen_port", bind_port);
-
+    conf_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
+    conf_ptr->lookupValue("rpc.client.serv_port", bind_port);
 
     std::string msg_str("nicol, taoz from test");
 
@@ -92,23 +90,23 @@ TEST(ClientSmokeTest, RpcClientTest) {
 
     std::string addr_ip;
     int         bind_port;
-    ConfUtil::conf_value(*conf_ptr, "rpc_network.bind_addr", addr_ip);
-    ConfUtil::conf_value(*conf_ptr, "rpc_network.listen_port", bind_port);
+    conf_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
+    conf_ptr->lookupValue("rpc.client.serv_port", bind_port);
 
 
     std::string msg_str("nicol, taoz from test rpc");
 
     RpcClient client(addr_ip, bind_port);
-    log_debug("create client with %s:%u", addr_ip.c_str(), bind_port);
+    tzrpc_client::log_debug("create client with %s:%u", addr_ip.c_str(), bind_port);
 
     std::string rsp_str1;
     client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, msg_str, rsp_str1);
-    log_debug("rpc_call_result: %s", rsp_str1.c_str());
+    tzrpc_client::log_debug("rpc_call_result: %s", rsp_str1.c_str());
     ASSERT_THAT(rsp_str1.size(), Gt(0));
 
     std::string rsp_str2;
     client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_WRITE, msg_str, rsp_str2);
-    log_debug("rpc_call_result: %s", rsp_str2.c_str());
+    tzrpc_client::log_debug("rpc_call_result: %s", rsp_str2.c_str());
     ASSERT_THAT(rsp_str2.size(), Gt(0));
 }
 

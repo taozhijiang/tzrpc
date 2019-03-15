@@ -9,6 +9,13 @@
 #ifndef __NETWORK_TCP_CONN_ASYNC_H__
 #define __NETWORK_TCP_CONN_ASYNC_H__
 
+#include <xtra_rhel.h>
+
+#include <boost/asio.hpp>
+#include <boost/atomic/atomic.hpp>
+#include <boost/asio/steady_timer.hpp>
+using boost::asio::steady_timer;
+
 #include <Network/NetConn.h>
 #include <Utils/Log.h>
 
@@ -23,35 +30,40 @@ typedef std::weak_ptr<TcpConnAsync>   TcpConnAsyncWeakPtr;
 
 
 
-class TcpConnAsync: public NetConn, public boost::noncopyable,
+class TcpConnAsync: public NetConn,
                     public std::enable_shared_from_this<TcpConnAsync> {
 
 public:
 
+    // 当前并发连接数目
+    static boost::atomic<int32_t> current_concurrency_;
+
     /// Construct a connection with the given socket.
-    TcpConnAsync(std::shared_ptr<ip::tcp::socket> socket, NetServer& server);
+    TcpConnAsync(std::shared_ptr<boost::asio::ip::tcp::socket> socket, NetServer& server);
     virtual ~TcpConnAsync();
+
+    // 禁止拷贝
+    TcpConnAsync(const TcpConnAsync&) = delete;
+    TcpConnAsync& operator=(const TcpConnAsync&) = delete;
 
     virtual void start();
     void stop();
 
-    void async_send_message(const Message& msg) {
-        send_bound_.buffer_.append(msg);
-        do_write();
-    }
+    int async_send_message(const Message& msg);
 
 private:
 
-    virtual void do_read();
-    virtual void read_handler(const boost::system::error_code& ec, std::size_t bytes_transferred);
+    virtual bool do_read() override;
+    virtual void read_handler(const boost::system::error_code& ec, std::size_t bytes_transferred) override;
+
+    virtual bool do_write() override;
+    virtual void write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred) override;
+
     void do_read_msg();
     void read_msg_handler(const boost::system::error_code& ec, std::size_t bytes_transferred);
 
     int parse_header();
     int parse_msg_body(Message& msg);
-
-    virtual void do_write();
-    virtual void write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred);
 
     void set_ops_cancel_timeout();
     void revoke_ops_cancel_timeout();
@@ -90,7 +102,7 @@ private:
     NetServer& server_;
 
     // Strand to ensure the connection's handlers are not called concurrently. ???
-    std::shared_ptr<io_service::strand> strand_;
+    std::shared_ptr<boost::asio::io_service::strand> strand_;
 
 private:
 

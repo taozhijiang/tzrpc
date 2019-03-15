@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -37,18 +39,18 @@ static void usage() {
 }
 
 static std::string generate_random_str() {
-	
-	std::stringstream ss;
+
+    std::stringstream ss;
     ss << "message with random [" << ::random() << "] include";
     return ss.str();
 }
 
 void* perf_run(void* x_void_ptr) {
-	
+
     while(!start)
         ::usleep(1);
 
-    RpcClient client(setting.addr_ip_, setting.addr_port_);
+    RpcClient client(setting.serv_addr_, setting.serv_port_);
 
     while(!stop) {
 
@@ -100,21 +102,21 @@ void* perf_run(void* x_void_ptr) {
 }
 
 int main(int argc, char* argv[]) {
-	
+
     int thread_num = 0;
     if (argc < 2 || (thread_num = ::atoi(argv[1])) <= 0) {
         usage();
         return 0;
     }
 
-    setting.addr_ip_ = "127.0.0.1";
-    setting.addr_port_ = 8435;
+    setting.serv_addr_ = "127.0.0.1";
+    setting.serv_port_ = 8434;
 
     std::vector<pthread_t> tids( thread_num,  0);
     for(size_t i=0; i<tids.size(); ++i) {
-		pthread_create(&tids[i], NULL, perf_run, NULL);
+        pthread_create(&tids[i], NULL, perf_run, NULL);
         std::cerr << "starting thread with id: " << tids[i] << std::endl;
-	}
+    }
 
     ::sleep(3);
     std::cerr << "begin to test, press any to stop." << std::endl;
@@ -129,9 +131,9 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "total count %ld, time: %ld, perf: %ld tps\n", count, stop_time - start_time, count_per_sec);
 
     for(size_t i=0; i<tids.size(); ++i) {
-		pthread_join(tids[i], NULL);
+        pthread_join(tids[i], NULL);
         std::cerr<< "joining " << tids[i] << std::endl;
-	}
+    }
 
     std::cerr << "done" << std::endl;
 

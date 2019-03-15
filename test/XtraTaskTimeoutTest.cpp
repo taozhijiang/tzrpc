@@ -15,7 +15,7 @@ using namespace ::testing;
 using namespace tzrpc;
 using namespace tzrpc_client;
 
-TEST(XtraTaskRequestCheckTest, InvalidRequestTest) {
+TEST(XtraTaskTimeoutTest, TimeoutTest) {
 
     std::string cfgFile = "tzrpc.conf";
 
@@ -32,25 +32,25 @@ TEST(XtraTaskRequestCheckTest, InvalidRequestTest) {
 
     RpcClient client(addr_ip, bind_port);
 
-    std::string msg_str("nicol, taoz from test rpc");
-
-    std::string ping_str("<<<ping>>>");
+    time_t start_time = ::time(NULL);
     std::string mar_str;
     std::string str;
+
     XtraTask::XtraReadOps::Request request;
-    request.mutable_ping()->set_msg(ping_str);
+    request.mutable_timeout()->set_timeout(3);
     ASSERT_TRUE(ProtoBuf::marshalling_to_string(request, &mar_str));
-    auto status = client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, mar_str, str);
-    ASSERT_THAT(static_cast<uint8_t>(status), Eq(0));
+    auto status = client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, mar_str, str, 2);
+    std::cout << "callout interval: " << ::time(NULL) - start_time << std::endl;
+    ASSERT_THAT((::time(NULL) - start_time), Eq(2));
+    ASSERT_THAT(static_cast<uint8_t>(status), Eq(static_cast<uint8_t>(RpcClientStatus::RPC_CALL_TIMEOUT))); // RPC 调用超时
 
-    XtraTask::XtraReadOps::Response response;
-    ASSERT_TRUE(ProtoBuf::unmarshalling_from_string(str, &response));
-    ASSERT_THAT(response.IsInitialized(), Eq(true));
 
-    ASSERT_TRUE(response.has_code() && (response.code() == 0) );
-    std::string pong_str = response.ping().msg();
-
-    std::cout << "pong: " << pong_str << std::endl;
+    // 重新建立连接了
+    start_time = ::time(NULL);
+    status = client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, mar_str, str, 4);
+    std::cout << "callout interval: " << ::time(NULL) - start_time << std::endl;
+    ASSERT_THAT((::time(NULL) - start_time), Eq(3));
+    ASSERT_THAT(static_cast<uint8_t>(status), Eq(0)); // RPC 调用正常
 }
 
 

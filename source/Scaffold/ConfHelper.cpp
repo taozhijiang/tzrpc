@@ -5,8 +5,11 @@
  *
  */
 
+#include <sstream>
+#include <iostream>
 
 #include <Scaffold/ConfHelper.h>
+#include <Scaffold/Status.h>
 
 namespace tzrpc {
 
@@ -43,6 +46,12 @@ bool ConfHelper::init(std::string cfgfile) {
         return false;
     }
 
+    Status::instance().register_status_callback(
+            "ConfHelper",
+            std::bind(&ConfHelper::module_status, this,
+                      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+
     return true;
 }
 
@@ -73,7 +82,7 @@ int ConfHelper::update_runtime_conf() {
 
     int ret = 0;
     for (auto it = calls_.begin(); it != calls_.end(); ++it) {
-        ret += (*it)(*conf_ptr_); // call it!
+        ret += (it->second)(*conf_ptr_); // call it!
     }
 
     log_alert("ConfHelper::update_runtime_conf total callback return: %d", ret);
@@ -82,14 +91,35 @@ int ConfHelper::update_runtime_conf() {
     return ret;
 }
 
-int ConfHelper::register_conf_callback(ConfUpdateCallable func) {
+int ConfHelper::register_runtime_callback(const std::string& name, ConfUpdateCallable func) {
 
-    if (!func){
+    if (name.empty() || !func){
+        log_err("invalid name or func param.");
         return -1;
     }
 
     std::lock_guard<std::mutex> lock(lock_);
-    calls_.push_back(func);
+    calls_.push_back({name, func});
+    log_debug("register runtime for %s success.",  name.c_str());
+
+    return 0;
+}
+
+
+int ConfHelper::module_status(std::string& module, std::string& name, std::string& val) {
+
+    module = "tzrpc";
+    name   = "ConfHelper";
+
+    std::stringstream ss;
+    ss << "registered runtime update: " << std::endl;
+
+    int i = 1;
+    for (auto it = calls_.begin(); it != calls_.end(); ++it) {
+        ss << "\t" << i++ << ". "<< it->first << std::endl;
+    }
+
+    val = ss.str();
     return 0;
 }
 
