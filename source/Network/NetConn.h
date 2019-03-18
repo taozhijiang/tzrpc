@@ -16,14 +16,14 @@
 
 namespace tzrpc {
 
-enum ConnStat {
+enum class ConnStat : uint8_t {
     kWorking = 1,
     kPending,
     kError,
     kClosed,
 };
 
-enum ShutdownType {
+enum class ShutdownType : uint8_t {
     kSend = 1,
     kRecv = 2,
     kBoth = 3,
@@ -34,15 +34,14 @@ class NetConn {
 public:
 
     /// Construct a connection with the given socket.
-    explicit NetConn(std::shared_ptr<boost::asio::ip::tcp::socket> sock):
-        conn_stat_(kPending),
-        socket_(sock)
-    {
+    explicit NetConn(std::shared_ptr<boost::asio::ip::tcp::socket> sock) :
+        conn_stat_(ConnStat::kPending),
+        socket_(sock) {
         // 默认是阻塞类型的socket，异步调用的时候自行设置
         set_tcp_nonblocking(false);
     }
 
-    virtual ~NetConn() {}
+    virtual ~NetConn() { }
 
 public:
 
@@ -50,7 +49,7 @@ public:
     virtual void read_handler(const boost::system::error_code& ec, std::size_t bytes_transferred) = 0;
 
     virtual bool do_write() = 0;
-    virtual void write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred) = 0;
+    virtual void write_handler(const boost::system::error_code& ec, std::size_t bytes_transferred) = 0;
 
 
     // some general tiny function
@@ -94,15 +93,15 @@ public:
 
         std::lock_guard<std::mutex> lock(conn_mutex_);
 
-        if ( conn_stat_ == ConnStat::kClosed )
+        if (conn_stat_ == ConnStat::kClosed)
             return;
 
         boost::system::error_code ignore_ec;
-        if (s == kSend) {
+        if (s == ShutdownType::kSend) {
             socket_->shutdown(boost::asio::socket_base::shutdown_send, ignore_ec);
-        } else if (s == kRecv) {
+        } else if (s == ShutdownType::kRecv) {
             socket_->shutdown(boost::asio::socket_base::shutdown_receive, ignore_ec);
-        } else if (s == kBoth) {
+        } else if (s == ShutdownType::kBoth) {
             socket_->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
         }
 
@@ -123,7 +122,7 @@ public:
 
         std::lock_guard<std::mutex> lock(conn_mutex_);
 
-        if ( conn_stat_ == ConnStat::kClosed )
+        if (conn_stat_ == ConnStat::kClosed)
             return;
 
         boost::system::error_code ignore_ec;
@@ -147,9 +146,9 @@ protected:
 const static uint32_t kFixedIoBufferSize = 2048;
 
 struct IOBound {
-    IOBound():
-        io_block_({}),
-        header_({}),
+    IOBound() :
+        io_block_({ }),
+        header_({ }),
         buffer_() {
     }
 
