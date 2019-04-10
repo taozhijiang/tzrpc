@@ -7,6 +7,7 @@
 #include <boost/format.hpp>
 #include <linux/limits.h>
 
+#include <version.h>
 #include <Utils/Utils.h>
 #include <Utils/Log.h>
 #include <Utils/SslSetup.h>
@@ -59,10 +60,14 @@ extern char * program_invocation_short_name;
 void usage() {
     std::stringstream ss;
 
-    ss << program_invocation_short_name << ":" << std::endl;
-    ss << "\t -c cfgFile  specify config file, default " << program_invocation_short_name << ".conf. " << std::endl;
-    ss << "\t -d          daemonize service." << std::endl;
-    ss << "\t -v          print version info." << std::endl;
+    ss << std::endl;
+    ss << " * THIS RELEASE OF " << program_invocation_short_name
+       << ": ver " << PROGRAM_VERSION << " * " << std::endl;
+
+    ss << std::endl;
+    ss << "    -c cfgFile  specify config file, default " << program_invocation_short_name << ".conf. " << std::endl;
+    ss << "    -d          daemonize service." << std::endl;
+    ss << "    -v          print version info." << std::endl;
     ss << std::endl;
 
     std::cout << ss.str();
@@ -70,7 +75,9 @@ void usage() {
 
 void show_vcs_info () {
 
-    std::cout << " THIS RELEASE OF " << program_invocation_short_name << std::endl;
+    std::cout << std::endl;
+    std::cout << " * THIS RELEASE OF " << program_invocation_short_name
+              << ": ver " << PROGRAM_VERSION << " * " << std::endl;
 
     extern const char *build_commit_version;
     extern const char *build_commit_branch;
@@ -78,11 +85,12 @@ void show_vcs_info () {
     extern const char *build_commit_author;
     extern const char *build_time;
 
-    std::cout << build_commit_version << std::endl;
-    std::cout << build_commit_branch << std::endl;
-    std::cout << build_commit_date << std::endl;
-    std::cout << build_commit_author << std::endl;
-    std::cout << build_time << std::endl;
+    std::cout << std::endl;
+    std::cout << "    " << build_commit_version << std::endl;
+    std::cout << "    " << build_commit_branch << std::endl;
+    std::cout << "    " << build_commit_date << std::endl;
+    std::cout << "    " << build_commit_author << std::endl;
+    std::cout << "    " << build_time << std::endl;
 
     return;
 }

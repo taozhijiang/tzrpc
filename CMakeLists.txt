@@ -2,27 +2,34 @@ cmake_minimum_required (VERSION 2.8.11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x " )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wpointer-arith -Wwrite-strings -Werror=format -march=native " )
 
-# 精简日志
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__FILENAME__=\"$(notdir $<)\" " )
-
 ####################
 ### 修改编译选项 ###
 
-# if what to see debug in verbose mode
+# if want to see debug in verbose mode
 # cmake -DCMAKE_VERBOSE_MAKEFILE=true ../
+# if want to see build in detail
+# make -- VERBOSE=1
 
-set(CMAKE_BUILD_TYPE DEBUG)
-#set(CMAKE_BUILD_TYPE RELEASE)
-set(CMAKE_CXX_FLAGS_DEBUG   "$ENV{CXXFLAGS} -O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 ")
+option(BUILD_DEBUG "Build Project for Debug Propurse..." OFF)
 
-IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
-ELSEIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
-    add_definitions(-DNP_DEBUG)
-ELSE(CMAKE_BUILD_TYPE MATCHES DEBUG)
-    message(FATAL_ERROR "Unknown BUILD_TYPE ... ")
-ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
+if(BUILD_DEBUG)
+    set(CMAKE_BUILD_TYPE Debug)
+    message(STATUS "build_type Debug flag: ${CMAKE_CXX_FLAGS_DEBUG}")
+else(BUILD_DEBUG)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+    #add_definitions(-DNP_DEBUG)
+    message(STATUS "build_type RelWithDebInfo flag: ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+endif(BUILD_DEBUG)
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PROGRAM_VERSION)
+    string(STRIP "${PROGRAM_VERSION}" PROGRAM_VERSION)
+endif()
+
+configure_file (
+    "include/version.h.in"
+    "../include/version.h"
+    @ONLY )
 
 ###################
 
@@ -80,7 +87,7 @@ exec_program( "export BUILD_VAR=`git log -1 --pretty=%cd` && echo 'const char *b
 exec_program( "export BUILD_VAR=`git log -1 --pretty=\"%an %ae\"` && echo 'const char *build_commit_author = \"VCS: Author:' $BUILD_VAR '\";' >> build_version.cpp ")
 exec_program( "export BUILD_VAR=`date +%F` && echo 'const char *build_time = \"Build At:' $BUILD_VAR '\";' >> build_version.cpp ")
 
-add_executable( tzrpc main.cpp setup.cpp build_version.cpp ${DIR_SRCS} )
+add_executable( tzrpc main.cpp setup.cpp build_version.cpp )
 
 # ld iconv ?
 
@@ -99,5 +106,8 @@ target_link_libraries( tzrpc -lrt -rdynamic -ldl
     ${EXTRA_LIBS}
 )
 
-add_subdirectory( test )
-add_subdirectory( benchmark )
+if(BUILD_DEBUG)
+    message(STATUS "we will build examples and unit_tests ...")
+    add_subdirectory( test )
+    add_subdirectory( benchmark )
+endif()
