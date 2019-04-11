@@ -9,8 +9,8 @@
 #define __IO_SERVICE_H__
 
 #include <boost/asio.hpp>
-#include <boost/thread.hpp>
 
+#include <thread>
 #include <mutex>
 #include <memory>
 
@@ -40,7 +40,7 @@ public:
         }
 
         // 创建io_service工作线程
-        io_service_thread_ = boost::thread(std::bind(&IoService::io_service_run, this));
+        io_service_thread_ = std::thread(std::bind(&IoService::io_service_run, this));
         initialized_ = true;
 
         log_notice("IoService initialized ok.");
@@ -72,6 +72,9 @@ private:
     ~IoService() {
         io_service_.stop();
         work_guard_.reset();
+        
+        if (io_service_thread_.joinable())
+            io_service_thread_.join();
     }
 
     // 禁止拷贝
@@ -83,7 +86,7 @@ private:
     bool initialized_;
 
     // 再启一个io_service_，主要来处理定时器等常用服务
-    boost::thread io_service_thread_;
+    std::thread io_service_thread_;
     boost::asio::io_service io_service_;
 
     // io_service如果没有任务，会直接退出执行，所以需要
@@ -101,6 +104,7 @@ private:
         io_service_.run(ec);
 
         log_notice("io_service thread terminated ...");
+        log_notice("error_code: {%d} %s", ec.value(), ec.message().c_str());
     }
 
 };

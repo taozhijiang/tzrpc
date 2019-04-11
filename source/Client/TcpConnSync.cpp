@@ -27,8 +27,8 @@ TcpConnSync::TcpConnSync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
                          boost::asio::io_service& io_service,
                          RpcClientSetting& client_setting):
     NetConn(socket),
-    io_service_(io_service),
-    client_setting_(client_setting) {
+    client_setting_(client_setting),
+    io_service_(io_service) {
 
     set_tcp_nodelay(true);
     set_tcp_nonblocking(false);
