@@ -56,6 +56,10 @@ public:
     RpcClient();
     ~RpcClient();
 
+    // 禁止拷贝
+    RpcClient(const RpcClient&) = delete;
+    RpcClient& operator=(const RpcClient&) = delete;
+
     RpcClient(const std::string& addr, uint16_t port, CP_log_store_func_t log_func = syslog);
     RpcClient(const std::string& cfgFile, CP_log_store_func_t log_func = syslog);
     RpcClient(const libconfig::Setting& setting, CP_log_store_func_t log_func = syslog);

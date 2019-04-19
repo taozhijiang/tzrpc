@@ -37,6 +37,7 @@ class RpcClientImpl: public std::enable_shared_from_this<RpcClientImpl> {
 public:
     RpcClientImpl(const RpcClientSetting& client_setting):
         client_setting_(client_setting),
+        call_mutex_(),
         time_start_(0),
         was_timeout_(false),
         rpc_call_timer_(),
@@ -44,6 +45,10 @@ public:
     }
 
     ~RpcClientImpl();
+
+    // 禁止拷贝
+    RpcClientImpl(const RpcClientImpl&) = delete;
+    RpcClientImpl& operator=(const RpcClientImpl&) = delete;
 
     RpcClientStatus call_RPC(uint16_t service_id, uint16_t opcode,
                              const std::string& payload, std::string& respload,
@@ -54,6 +59,9 @@ private:
     bool recv_rpc_message(tzrpc::Message& net_message);
 
     RpcClientSetting client_setting_;
+
+    // 确保不会客户端多线程调用，导致底层的连接串话
+    std::mutex call_mutex_;
 
     //
     // rpc调用超时相关的配置
