@@ -17,7 +17,7 @@
 using boost::asio::steady_timer;
 
 #include <Network/NetConn.h>
-#include <Utils/Log.h>
+#include <other/Log.h>
 
 namespace tzrpc {
 

@@ -13,6 +13,7 @@ set (INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/source/
         ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/include/
         ${PROJECT_SOURCE_DIR}/deps/xtra_rhelz.x/include/google/
+        ${PROJECT_SOURCE_DIR}/deps/roo
 )
 
 link_directories( /usr/lib64/mysql/
@@ -27,7 +28,7 @@ add_executable( perf_case_a perf_case_a.cpp)
 add_executable( perf_case_b perf_case_b.cpp)
 
 set (EXTRA_LIBS Client )
-
+set (EXTRA_LIBS ${EXTRA_LIBS} Roo glog_syslog )
 set (EXTRA_LIBS ${EXTRA_LIBS} ssl crypto config++)
 set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
 set (EXTRA_LIBS ${EXTRA_LIBS} boost_system boost_thread boost_chrono boost_regex)

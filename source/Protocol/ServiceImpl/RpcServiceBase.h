@@ -4,6 +4,9 @@
 #include <string>
 #include <libconfig.h++>
 
+#include <other/Log.h>
+using roo::log_api;
+
 namespace tzrpc {
 
 // 继承一些实现函数，避免多个服务实例中重复执行

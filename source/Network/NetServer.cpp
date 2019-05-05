@@ -10,9 +10,12 @@
 #include <Network/NetServer.h>
 #include <Network/TcpConnAsync.h>
 
-#include <Scaffold/ConfHelper.h>
-#include <Scaffold/Status.h>
-#include <Utils/StrUtil.h>
+#include <scaffold/Setting.h>
+#include <scaffold/Status.h>
+
+#include <string/StrUtil.h>
+
+#include <Captain.h>
 
 namespace tzrpc {
 
@@ -50,7 +53,7 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
     }
 
     if (!safe_ip_.empty()) {
-        log_alert("safe_ip not empty, totally contain %d items",
+        log_warning("safe_ip not empty, totally contain %d items",
                   static_cast<int>(safe_ip_.size()));
     }
 
@@ -110,7 +113,7 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
 void NetConf::timed_feed_token_handler(const boost::system::error_code& ec) {
 
     if (service_speed_ == 0) {
-        log_alert("unlock speed jail, close the timer.");
+        log_notice("unlock speed jail, close the timer.");
         timed_feed_token_.reset();
         return;
     }
@@ -127,18 +130,18 @@ void NetConf::timed_feed_token_handler(const boost::system::error_code& ec) {
 
 bool NetServer::init() {
 
-    auto conf_ptr = ConfHelper::instance().get_conf();
+    auto setting_ptr = Captain::instance().setting_ptr_->get_setting();
 
     // protect cfg race conditon
     std::lock_guard<std::mutex> lock(conf_.lock_);
-    if (!conf_.load_conf(conf_ptr)) {
-        log_err("Load conf failed!");
+    if (!conf_.load_conf(setting_ptr)) {
+        log_err("Load setting from Setting failed!");
         return false;
     }
 
     // 上面的conf_参数已经经过合法性的检验了
     ep_ = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(conf_.bind_addr_), conf_.bind_port_);
-    log_alert("create listen endpoint for %s:%d",
+    log_info("create listen endpoint for %s:%d",
                       conf_.bind_addr_.c_str(), conf_.bind_port_);
 
     log_debug("socket/session conn cancel time_out: %d secs, enabled: %s",
@@ -169,13 +172,13 @@ bool NetServer::init() {
     }
 
     // 注册配置动态更新的回调函数
-    ConfHelper::instance().register_runtime_callback(
+    Captain::instance().setting_ptr_->attach_runtime_callback(
             "NetServer",
             std::bind(&NetServer::module_runtime, this,
                       std::placeholders::_1));
 
     // 系统状态展示相关的初始化
-    Status::instance().register_status_callback(
+    Captain::instance().status_ptr_->attach_status_callback(
             "NetServer",
             std::bind(&NetServer::module_status, this,
                       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -249,22 +252,22 @@ void NetServer::accept_handler(const boost::system::error_code& ec, SocketPtr so
 }
 
 
-void NetServer::io_service_run(ThreadObjPtr ptr) {
+void NetServer::io_service_run(roo::ThreadObjPtr ptr) {
 
     while (true) {
 
-        if (unlikely(ptr->status_ == ThreadStatus::kTerminating)) {
+        if (unlikely(ptr->status_ == roo::ThreadStatus::kTerminating)) {
             log_err("thread %#lx is about to terminating...", (long)pthread_self());
             break;
         }
 
         // 线程启动
-        if (unlikely(ptr->status_ == ThreadStatus::kSuspend)) {
+        if (unlikely(ptr->status_ == roo::ThreadStatus::kSuspend)) {
             ::usleep(1*1000*1000);
             continue;
         }
 
-        log_alert("io_service thread %#lx about to loop...", (long)pthread_self());
+        log_notice("io_service thread %#lx about to loop...", (long)pthread_self());
         boost::system::error_code ec;
         io_service_.run(ec);
 
@@ -274,7 +277,7 @@ void NetServer::io_service_run(ThreadObjPtr ptr) {
         }
     }
 
-    ptr->status_ = ThreadStatus::kDead;
+    ptr->status_ = roo::ThreadStatus::kDead;
     log_info("io_service thread %#lx is about to terminate ... ", (long)pthread_self());
 
     return;

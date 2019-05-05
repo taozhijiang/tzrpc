@@ -10,7 +10,7 @@
 #include <Client/include/RpcClient.h>
 
 #include <Client/Common.h>
-#include <Client/ProtoBuf.h>
+#include <message/ProtoBuf.h>
 #include <Client/XtraTask.pb.h>
 
 using namespace tzrpc_client;
@@ -59,7 +59,7 @@ void* perf_run(void* x_void_ptr) {
         tzrpc::XtraTask::XtraReadOps::Request request;
 
         request.mutable_echo()->set_msg(echo_str);
-        if(!tzrpc::ProtoBuf::marshalling_to_string(request, &mar_str)) {
+        if(!roo::ProtoBuf::marshalling_to_string(request, &mar_str)) {
             std::cerr << "marshalling message failed." << std::endl;
             stop = true;
             continue;
@@ -76,7 +76,7 @@ void* perf_run(void* x_void_ptr) {
         }
 
         tzrpc::XtraTask::XtraReadOps::Response response;
-        if(!tzrpc::ProtoBuf::unmarshalling_from_string(resp_str, &response)) {
+        if(!roo::ProtoBuf::unmarshalling_from_string(resp_str, &response)) {
             std::cerr << "unmarshalling message failed." << std::endl;
             stop = true;
             continue;

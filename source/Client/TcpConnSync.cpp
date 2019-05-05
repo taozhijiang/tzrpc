@@ -10,7 +10,8 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <Client/LogClient.h>
+#include <other/Log.h>
+using roo::log_api;
 
 #include <Client/include/RpcClient.h>
 #include <Client/TcpConnSync.h>

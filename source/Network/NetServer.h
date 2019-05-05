@@ -11,8 +11,10 @@
 #include <mutex>
 #include <libconfig.h++>
 
-#include <Utils/Log.h>
-#include <Utils/ThreadPool.h>
+#include <other/Log.h>
+using roo::log_api;
+
+#include <concurrency/ThreadPool.h>
 
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -195,8 +197,8 @@ private:
     NetConf conf_;
 
 private:
-    ThreadPool io_service_threads_;
-    void io_service_run(ThreadObjPtr ptr);  // main task loop
+    roo::ThreadPool io_service_threads_;
+    void io_service_run(roo::ThreadObjPtr ptr);  // main task loop
 
 public:
     int io_service_stop_graceful() {

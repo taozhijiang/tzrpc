@@ -4,10 +4,11 @@
 #include <gmock/gmock.h>
 using namespace ::testing;
 
-#include <Core/ProtoBuf.h>
+#include <message/ProtoBuf.h>
 #include <Protocol/gen-cpp/XtraTask.pb.h>
 
 using namespace tzrpc;
+using namespace roo;
 
 #if 0
 message XtraReadOps {

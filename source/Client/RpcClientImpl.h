@@ -11,7 +11,10 @@
 #include <boost/asio/steady_timer.hpp>
 using boost::asio::steady_timer;
 
-#include <Client/LogClient.h>
+#include <other/Log.h>
+using roo::log_api;
+
+#include <concurrency/IoService.h>
 #include <Client/include/RpcClientStatus.h>
 #include <Client/include/RpcClient.h>
 
@@ -38,6 +41,7 @@ public:
     RpcClientImpl(const RpcClientSetting& client_setting):
         client_setting_(client_setting),
         call_mutex_(),
+		io_service_(),
         time_start_(0),
         was_timeout_(false),
         rpc_call_timer_(),
@@ -45,6 +49,8 @@ public:
     }
 
     ~RpcClientImpl();
+
+    bool init();
 
     // 禁止拷贝
     RpcClientImpl(const RpcClientImpl&) = delete;
@@ -62,7 +68,7 @@ private:
 
     // 确保不会客户端多线程调用，导致底层的连接串话
     std::mutex call_mutex_;
-
+    std::unique_ptr<roo::IoService> io_service_;
     //
     // rpc调用超时相关的配置
     //

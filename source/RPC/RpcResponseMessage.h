@@ -8,12 +8,12 @@
 #ifndef __RPC_RESPONSE_MESSAGE_H__
 #define __RPC_RESPONSE_MESSAGE_H__
 
+#include <xtra_rhel.h>
+
 #include <endian.h>
 
 #include <cstdint>
 #include <string>
-
-#include <Utils/Utils.h>
 
 namespace tzrpc {
 
@@ -108,7 +108,8 @@ struct RpcResponseMessage {
 
     std::string dump() const {
         std::string ret = "rpc_response_header: " + header_.dump();
-        ret += ", rpc_response_message_len: " + convert_to_string(payload_.size());
+        ret += ", rpc_response_message_len: " + 
+               std::to_string(static_cast<long long unsigned int>(payload_.size()));
         ret += ".";
 
         return ret;

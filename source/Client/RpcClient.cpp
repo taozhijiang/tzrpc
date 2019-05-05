@@ -5,7 +5,8 @@
  *
  */
 
-#include <Client/IoService.h>
+#include <other/Log.h>
+
 #include <Client/RpcClientImpl.h>
 #include <Client/include/RpcClient.h>
 
@@ -16,30 +17,30 @@ RpcClient::RpcClient():
     client_setting_() {
 }
 
-RpcClient::RpcClient(const std::string& addr, uint16_t port, CP_log_store_func_t log_func):
+RpcClient::RpcClient(const std::string& addr, uint16_t port):
     initialized_(false),
     client_setting_() {
 
-    init(addr, port, log_func);
+    init(addr, port);
 }
 
-RpcClient::RpcClient(const std::string& cfgFile, CP_log_store_func_t log_func):
+RpcClient::RpcClient(const std::string& cfgFile):
     initialized_(false),
     client_setting_() {
 
-    init(cfgFile, log_func);
+    init(cfgFile);
 }
 
-RpcClient::RpcClient(const libconfig::Setting& setting, CP_log_store_func_t log_func):
+RpcClient::RpcClient(const libconfig::Setting& setting):
     initialized_(false),
     client_setting_() {
 
-    init(setting, log_func);
+    init(setting);
 }
 
 RpcClient::~RpcClient() {}
 
-bool RpcClient::init(const std::string& addr, uint16_t port, CP_log_store_func_t log_func) {
+bool RpcClient::init(const std::string& addr, uint16_t port) {
 
     if (initialized_) {
         log_err("RpcClient already successfully initialized...");
@@ -47,20 +48,14 @@ bool RpcClient::init(const std::string& addr, uint16_t port, CP_log_store_func_t
     }
 
     // init log first
-    set_checkpoint_log_store_func(log_func);
-    log_init(client_setting_.log_level_);
+    roo::log_init(client_setting_.log_level_);
 
     client_setting_.serv_addr_ = addr;
     client_setting_.serv_port_ = port;
 
     impl_.reset(new RpcClientImpl(std::cref(client_setting_)));
-    if (!impl_) {
+    if (!impl_ || !impl_->init()) {
         log_err("create impl failed.");
-        return false;
-    }
-
-    if (!IoService::instance().init()) {
-        log_err("init IoService failed.");
         return false;
     }
 
@@ -68,14 +63,14 @@ bool RpcClient::init(const std::string& addr, uint16_t port, CP_log_store_func_t
     return true;
 }
 
-bool RpcClient::init(const std::string& cfgFile, CP_log_store_func_t log_func) {
+bool RpcClient::init(const std::string& cfgFile) {
 
     libconfig::Config cfg;
     try {
         cfg.readFile(cfgFile.c_str());
 
         const libconfig::Setting& setting = cfg.lookup("rpc.client");
-        return init(setting, log_func);
+        return init(setting);
 
     } catch(libconfig::FileIOException &fioex) {
         log_err("I/O error while reading file.");
@@ -90,7 +85,7 @@ bool RpcClient::init(const std::string& cfgFile, CP_log_store_func_t log_func) {
     return false;
 }
 
-bool RpcClient::init(const libconfig::Setting& setting, CP_log_store_func_t log_func) {
+bool RpcClient::init(const libconfig::Setting& setting) {
 
     if (!setting.lookupValue("serv_addr", client_setting_.serv_addr_) ||
         !setting.lookupValue("serv_port", client_setting_.serv_port_) ||
@@ -119,7 +114,7 @@ bool RpcClient::init(const libconfig::Setting& setting, CP_log_store_func_t log_
         return false;
     }
 
-    return init(client_setting_.serv_addr_,  client_setting_.serv_port_, log_func);
+    return init(client_setting_.serv_addr_,  client_setting_.serv_port_);
 }
 
 

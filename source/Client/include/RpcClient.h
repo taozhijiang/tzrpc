@@ -9,7 +9,6 @@
 #define __RPC_CLIENT_H__
 
 #include <libconfig.h++>
-#include <syslog.h>
 
 #include <memory>
 #include <string>
@@ -17,13 +16,7 @@
 #include "RpcClientStatus.h"
 
 
-typedef void(* CP_log_store_func_t)(int priority, const char *format, ...);
-
-
 namespace tzrpc_client {
-
-extern CP_log_store_func_t checkpoint_log_store_func_impl_;
-void set_checkpoint_log_store_func(CP_log_store_func_t func);
 
 
 struct RpcClientSetting {
@@ -60,9 +53,9 @@ public:
     RpcClient(const RpcClient&) = delete;
     RpcClient& operator=(const RpcClient&) = delete;
 
-    RpcClient(const std::string& addr, uint16_t port, CP_log_store_func_t log_func = syslog);
-    RpcClient(const std::string& cfgFile, CP_log_store_func_t log_func = syslog);
-    RpcClient(const libconfig::Setting& setting, CP_log_store_func_t log_func = syslog);
+    RpcClient(const std::string& addr, uint16_t port);
+    RpcClient(const std::string& cfgFile);
+    RpcClient(const libconfig::Setting& setting);
 
     RpcClientStatus call_RPC(uint16_t service_id, uint16_t opcode,
                              const std::string& payload, std::string& respload);
@@ -74,9 +67,9 @@ public:
 
 private:
 
-    bool init(const std::string& addr, uint16_t port, CP_log_store_func_t log_func);
-    bool init(const std::string& cfgFile, CP_log_store_func_t log_func);
-    bool init(const libconfig::Setting& setting, CP_log_store_func_t log_func);
+    bool init(const std::string& addr, uint16_t port);
+    bool init(const std::string& cfgFile);
+    bool init(const libconfig::Setting& setting);
 
     bool initialized_;
     RpcClientSetting client_setting_;

@@ -2,18 +2,17 @@
 
 #include <ctime>
 #include <cstdio>
+#include <iostream>
 
-#include <syslog.h>
 #include <boost/format.hpp>
 #include <linux/limits.h>
 
 #include <version.h>
-#include <Utils/Utils.h>
-#include <Utils/Log.h>
-#include <Utils/SslSetup.h>
+#include <other/Log.h>
 
-#include <Scaffold/ConfHelper.h>
-#include <Scaffold/Status.h>
+#include <Captain.h>
+#include <scaffold/Setting.h>
+#include <scaffold/Status.h>
 
 // API for main
 
@@ -24,25 +23,25 @@ int create_process_pid();
 
 
 static void interrupted_callback(int signal){
-    tzrpc::log_alert("Signal %d received ...", signal);
+    roo::log_alert("Signal %d received ...", signal);
     switch(signal) {
         case SIGHUP:
-            tzrpc::log_notice("SIGHUP recv, do update_run_conf... ");
-            tzrpc::ConfHelper::instance().update_runtime_conf();
+            roo::log_notice("SIGHUP recv, do update_run_conf... ");
+            tzrpc::Captain::instance().setting_ptr_->update_runtime_setting();
             break;
 
         case SIGUSR1:
-            tzrpc::log_notice("SIGUSR recv, do module_status ... ");
+            roo::log_notice("SIGUSR recv, do module_status ... ");
             {
                 std::string output;
-                tzrpc::Status::instance().collect_status(output);
+                tzrpc::Captain::instance().status_ptr_->collect_status(output);
                 std::cout << output << std::endl;
-                tzrpc::log_notice("%s", output.c_str());
+                roo::log_notice("%s", output.c_str());
             }
             break;
 
         default:
-            tzrpc::log_err("Unhandled signal: %d", signal);
+            roo::log_err("Unhandled signal: %d", signal);
             break;
     }
 }
@@ -65,9 +64,9 @@ void usage() {
        << ": ver " << PROGRAM_VERSION << " * " << std::endl;
 
     ss << std::endl;
-    ss << "    -c cfgFile  specify config file, default " << program_invocation_short_name << ".conf. " << std::endl;
-    ss << "    -d          daemonize service." << std::endl;
-    ss << "    -v          print version info." << std::endl;
+    ss << "\t -c cfgFile  specify config file, default " << program_invocation_short_name << ".conf. " << std::endl;
+    ss << "\t -d          daemonize service." << std::endl;
+    ss << "\t -v          print version info." << std::endl;
     ss << std::endl;
 
     std::cout << ss.str();
@@ -106,7 +105,7 @@ int create_process_pid() {
     FILE* fp = fopen(pid_file, "w+");
 
     if (!fp) {
-        tzrpc::log_err("Create pid file %s failed!", pid_file);
+        roo::log_err("Create pid file %s failed!", pid_file);
         return -1;
     }
 

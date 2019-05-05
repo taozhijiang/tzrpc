@@ -6,7 +6,7 @@
 #include <RPC/Service.h>
 #include <RPC/RpcInstance.h>
 
-#include <Scaffold/ConfHelper.h>
+#include <scaffold/Setting.h>
 
 #include "RpcServiceBase.h"
 

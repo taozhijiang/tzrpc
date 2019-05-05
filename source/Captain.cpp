@@ -5,25 +5,28 @@
  *
  */
 
-#include <syslog.h>
 #include <cstdlib>
 
 #include <memory>
 #include <string>
 #include <map>
 
+#include <other/Log.h>
+using roo::log_api;
+
 #include <Network/NetServer.h>
 
-#include <Utils/Utils.h>
-#include <Utils/Log.h>
-#include <Utils/Timer.h>
+#include <concurrency/Timer.h>
 
-#include <Scaffold/ConfHelper.h>
-#include <Scaffold/Captain.h>
+#include <scaffold/Setting.h>
+#include <scaffold/Status.h>
 
 #include <RPC/Dispatcher.h>
 #include <Protocol/Common.h>
 #include <Protocol/ServiceImpl/XtraTaskService.h>
+
+
+#include "Captain.h"
 
 namespace tzrpc {
 
@@ -45,32 +48,40 @@ bool Captain::init(const std::string& cfgFile) {
         return false;
     }
 
-    if (!Timer::instance().init()) {
+    timer_ptr_ = std::make_shared<roo::Timer>();
+    if (!timer_ptr_ || !timer_ptr_->init()) {
         log_err("init Timer service failed, critical !!!!");
         return false;
     }
 
-    if(!ConfHelper::instance().init(cfgFile)) {
-        log_err("init ConfHelper (%s) failed, critical !!!!", cfgFile.c_str());
+    setting_ptr_ = std::make_shared<roo::Setting>();
+    if(!setting_ptr_ || !setting_ptr_->init(cfgFile)) {
+        log_err("init Setting (%s) failed, critical !!!!", cfgFile.c_str());
         return false;
     }
 
-    auto conf_ptr = ConfHelper::instance().get_conf();
-    if(!conf_ptr) {
-        log_err("ConfHelper return null conf pointer, maybe your conf file ill!");
+    auto setting_ptr = setting_ptr_->get_setting();
+    if(!setting_ptr) {
+        log_err("Setting return null setting pointer, maybe your conf file ill!");
         return false;
     }
 
     int log_level = 0;
-    conf_ptr->lookupValue("log_level", log_level);
+    setting_ptr->lookupValue("log_level", log_level);
     if (log_level <= 0 || log_level > 7) {
         log_notice("invalid log_level value, reset to default 7.");
         log_level = 7;
     }
 
-    log_init(log_level);
+    roo::log_init(log_level, "", "./log", LOG_LOCAL6);
     log_notice("initialized log with level: %d", log_level);
 
+    status_ptr_ = std::make_shared<roo::Status>();
+    if(!status_ptr_) {
+        log_err("init Status failed, critical !!!!");
+        return false;
+    }
+    
     net_server_ptr_.reset(new NetServer("tzrpc_server"));
     if (!net_server_ptr_ || !net_server_ptr_->init()) {
         log_err("init NetServer failed!");
@@ -104,7 +115,7 @@ bool Captain::init(const std::string& cfgFile) {
 
 bool Captain::service_graceful() {
 
-    Timer::instance().threads_join();
+    timer_ptr_->threads_join();
     net_server_ptr_->io_service_stop_graceful();
     return true;
 }
@@ -116,7 +127,7 @@ void Captain::service_terminate() {
 
 bool Captain::service_joinall() {
 
-    Timer::instance().threads_join();
+    timer_ptr_->threads_join();
     net_server_ptr_->io_service_join();
     return true;
 }

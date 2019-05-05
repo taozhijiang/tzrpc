@@ -5,9 +5,10 @@
  *
  */
 
-#include <Utils/Log.h>
+#include <other/Log.h>
+#include <scaffold/Setting.h>
 
-#include <Scaffold/ConfHelper.h>
+#include <Captain.h>
 
 #include <RPC/Service.h>
 #include <RPC/Executor.h>
@@ -40,7 +41,7 @@ bool Dispatcher::init() {
     }
 
     // 注册配置动态配置更新接口，由此处分发到各个虚拟主机，不再每个虚拟主机自己注册
-    ConfHelper::instance().register_runtime_callback(
+    Captain::instance().setting_ptr_->attach_runtime_callback(
         "Dispatcher",
         std::bind(&Dispatcher::module_runtime, this,
                   std::placeholders::_1));

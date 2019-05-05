@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <string>
 
-#include <Utils/Utils.h>
 
 namespace tzrpc {
 
@@ -73,7 +72,7 @@ struct Message {
 
     std::string dump() const {
         std::string ret = "header: " + header_.dump();
-        ret += ", msg_len: " + convert_to_string(payload_.size());
+        ret += ", msg_len: " + std::to_string(static_cast<long long unsigned int>(payload_.size()));
         ret += "]]]";
 
         return ret;

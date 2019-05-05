@@ -11,12 +11,15 @@
 
 #include <xtra_rhel.h>
 
-#include <Utils/Log.h>
-#include <Utils/EQueue.h>
+#include <other/Log.h>
+using roo::log_api;
+
+#include <container/EQueue.h>
+#include <concurrency/ThreadPool.h>
+#include <scaffold/Setting.h>
+
 #include <RPC/Service.h>
 
-#include <Utils/ThreadPool.h>
-#include <Scaffold/ConfHelper.h>
 
 namespace tzrpc {
 
@@ -47,7 +50,7 @@ public:
 
 private:
     std::shared_ptr<Service> service_impl_;
-    EQueue<std::shared_ptr<RpcInstance>> rpc_queue_;
+    roo::EQueue<std::shared_ptr<RpcInstance>> rpc_queue_;
 
 private:
     // 这个锁保护conf_使用的，因为使用频率不是很高，所以所有访问
@@ -62,8 +65,8 @@ private:
     }
 
 
-    ThreadPool executor_threads_;
-    void executor_service_run(ThreadObjPtr ptr);  // main task loop
+    roo::ThreadPool executor_threads_;
+    void executor_service_run(roo::ThreadObjPtr ptr);  // main task loop
 
 public:
 

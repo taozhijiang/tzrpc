@@ -8,15 +8,17 @@
 
 #include <xtra_rhel.h>
 
+#include <scaffold/Status.h>
+
 #include <RPC/RpcInstance.h>
 #include <RPC/Executor.h>
 #include <RPC/Dispatcher.h>
 
-#include <Utils/Timer.h>
-#include <Scaffold/Status.h>
+#include <concurrency/Timer.h>
+
+#include <Captain.h>
 
 namespace tzrpc {
-
 
 bool Executor::init() {
 
@@ -36,14 +38,15 @@ bool Executor::init() {
                   instance_name().c_str(),
                   conf_.exec_thread_number_hard_, conf_.exec_thread_step_size_);
 
-        if (!Timer::instance().add_timer(std::bind(&Executor::executor_threads_adjust, shared_from_this(), std::placeholders::_1),
-                                         1 * 1000, true)) {
+        if (!Captain::instance().timer_ptr_->add_timer(
+                std::bind(&Executor::executor_threads_adjust, shared_from_this(), std::placeholders::_1),
+                1 * 1000, true)) {
             log_err("create thread adjust timer failed.");
             return false;
         }
     }
 
-    Status::instance().register_status_callback(
+    Captain::instance().status_ptr_->attach_status_callback(
                 "executor_" + instance_name(),
                 std::bind(&Executor::module_status, shared_from_this(),
                           std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -83,21 +86,21 @@ void Executor::executor_threads_adjust(const boost::system::error_code& ec) {
 }
 
 
-void Executor::executor_service_run(ThreadObjPtr ptr) {
+void Executor::executor_service_run(roo::ThreadObjPtr ptr) {
 
-    log_alert("executor_service thread %#lx about to loop ...", (long)pthread_self());
+    log_warning("executor_service thread %#lx about to loop ...", (long)pthread_self());
 
     while (true) {
 
         std::shared_ptr<RpcInstance> rpc_instance {};
 
-        if (unlikely(ptr->status_ == ThreadStatus::kTerminating)) {
+        if (unlikely(ptr->status_ == roo::ThreadStatus::kTerminating)) {
             log_err("thread %#lx is about to terminating...", (long)pthread_self());
             break;
         }
 
         // 线程启动
-        if (unlikely(ptr->status_ == ThreadStatus::kSuspend)) {
+        if (unlikely(ptr->status_ == roo::ThreadStatus::kSuspend)) {
             ::usleep(1*1000*1000);
             continue;
         }
@@ -110,7 +113,7 @@ void Executor::executor_service_run(ThreadObjPtr ptr) {
         service_impl_->handle_RPC(rpc_instance);
     }
 
-    ptr->status_ = ThreadStatus::kDead;
+    ptr->status_ = roo::ThreadStatus::kDead;
     log_info("io_service thread %#lx is about to terminate ... ", (long)pthread_self());
 
     return;

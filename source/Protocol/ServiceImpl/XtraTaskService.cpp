@@ -1,17 +1,22 @@
-#include <Utils/Log.h>
+#include <other/Log.h>
+using roo::log_api;
 
-#include <Core/ProtoBuf.h>
+#include <message/ProtoBuf.h>
 #include <Protocol/gen-cpp/XtraTask.pb.h>
 
+#include <scaffold/Setting.h>
+#include <scaffold/Status.h>
+
+#include <Captain.h>
 #include "XtraTaskService.h"
 
 namespace tzrpc {
 
 bool XtraTaskService::init() {
 
-    auto conf_ptr = ConfHelper::instance().get_conf();
-    if(!conf_ptr) {
-        log_err("ConfHelper not initialized? return conf_ptr empty!!!");
+    auto setting_ptr = Captain::instance().setting_ptr_->get_setting();
+    if(!setting_ptr) {
+        log_err("Setting not initialized? return setting_ptr empty!!!");
         return false;
     }
 
@@ -19,7 +24,7 @@ bool XtraTaskService::init() {
 
     try {
 
-        const libconfig::Setting &rpc_services = conf_ptr->lookup("rpc.services");
+        const libconfig::Setting &rpc_services = setting_ptr->lookup("rpc.services");
 
         for(int i = 0; i < rpc_services.getLength(); ++i) {
 
@@ -191,7 +196,7 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
 
         // 消息体的unmarshal
         XtraTask::XtraReadOps::Request request;
-        if (!ProtoBuf::unmarshalling_from_string(rpc_request_message.payload_, &request)) {
+        if (!roo::ProtoBuf::unmarshalling_from_string(rpc_request_message.payload_, &request)) {
             log_err("unmarshal request failed.");
             response.set_code(-1);
             response.set_msg("参数错误");
@@ -225,7 +230,7 @@ void XtraTaskService::read_ops_impl(std::shared_ptr<RpcInstance> rpc_instance) {
     } while (0);
 
     std::string response_str;
-    ProtoBuf::marshalling_to_string(response, &response_str);
+    roo::ProtoBuf::marshalling_to_string(response, &response_str);
     rpc_instance->reply_rpc_message(response_str);
 }
 

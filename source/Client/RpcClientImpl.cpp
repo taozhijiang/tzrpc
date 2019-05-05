@@ -5,14 +5,14 @@
  *
  */
 
-
+#include <xtra_rhel.h>
 
 #include <Core/Message.h>
 
 #include <RPC/RpcRequestMessage.h>
 #include <RPC/RpcResponseMessage.h>
 
-#include <Client/IoService.h>
+
 #include <Client/RpcClientImpl.h>
 #include <Client/TcpConnSync.h>
 
@@ -26,6 +26,16 @@ using tzrpc::kRpcHeaderMagic;
 
 namespace tzrpc_client {
 
+bool RpcClientImpl::init() {
+
+    io_service_ = make_unique<roo::IoService>();
+    if (!io_service_ || !io_service_->init() ) {
+        log_err("create and initialized IoService failed.");
+        return false;
+    }
+
+    return true;
+}
 
 RpcClientImpl::~RpcClientImpl() {
 
@@ -57,7 +67,7 @@ void RpcClientImpl::set_rpc_call_timeout(uint32_t sec) {
     if (rpc_call_timer_) {
         rpc_call_timer_->cancel(ignore_ec);
     } else {
-        rpc_call_timer_.reset(new steady_timer(IoService::instance().get_io_service()));
+        rpc_call_timer_.reset(new steady_timer(io_service_->get_io_service()));
     }
 
     SAFE_ASSERT( sec > 0 );
@@ -83,14 +93,14 @@ void RpcClientImpl::rpc_call_timeout(const boost::system::error_code& ec) {
 RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
                                         const std::string& payload, std::string& respload,
                                         uint32_t timeout_sec) {
-
+    
     std::lock_guard<std::mutex> lock(call_mutex_);
 
     if (!conn_) {
 
         boost::system::error_code ec;
         std::shared_ptr<boost::asio::ip::tcp::socket> socket_ptr
-                = std::make_shared<boost::asio::ip::tcp::socket>(IoService::instance().get_io_service());
+                = std::make_shared<boost::asio::ip::tcp::socket>(io_service_->get_io_service());
 
         socket_ptr->connect(boost::asio::ip::tcp::endpoint(
                                 boost::asio::ip::address::from_string(client_setting_.serv_addr_), client_setting_.serv_port_), ec);
@@ -102,7 +112,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
 
         }
 
-        conn_.reset(new TcpConnSync(socket_ptr, IoService::instance().get_io_service(), client_setting_));
+        conn_.reset(new TcpConnSync(socket_ptr, io_service_->get_io_service(), client_setting_));
         if (!conn_) {
             log_err("create socket %s:%u failed.",
                     client_setting_.serv_addr_.c_str(), client_setting_.serv_port_);
