@@ -9,9 +9,9 @@
 
 #include <Client/include/RpcClient.h>
 
-#include <Client/include/Common.h>
-#include <Client/include/ProtoBuf.h>
-#include <Client/include/XtraTask.pb.h>
+#include <Client/Common.h>
+#include <Client/ProtoBuf.h>
+#include <Client/XtraTask.pb.h>
 
 using namespace tzrpc_client;
 
@@ -99,6 +99,8 @@ void* perf_run(void* x_void_ptr) {
         // increment success case
         ++ count;
     }
+
+    return NULL;
 }
 
 int main(int argc, char* argv[]) {

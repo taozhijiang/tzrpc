@@ -43,8 +43,7 @@ public:
 
     bool send_net_message(const Message& msg) {
         if (client_setting_.send_max_msg_size_ != 0 &&
-            msg.header_.length > client_setting_.send_max_msg_size_)
-        {
+            msg.header_.length > client_setting_.send_max_msg_size_) {
             log_err("send_max_msg_size %d, but we recv %d",
             static_cast<int>(client_setting_.send_max_msg_size_), static_cast<int>(msg.header_.length));
             return false;
@@ -61,9 +60,10 @@ public:
 
 private:
 
-    virtual bool do_read() override  { SAFE_ASSERT(false); return false; }
-    virtual void read_handler(const boost::system::error_code&, size_t) override { SAFE_ASSERT(false); }
-    virtual void write_handler(const boost::system::error_code&, size_t) override { SAFE_ASSERT(false); }
+    virtual bool do_read()override { SAFE_ASSERT(false);
+        return false; }
+    virtual void read_handler(const boost::system::error_code&, size_t)override { SAFE_ASSERT(false); }
+    virtual void write_handler(const boost::system::error_code&, size_t)override { SAFE_ASSERT(false); }
 
     virtual bool do_read(Message& msg);
     bool do_read_msg(Message& msg);
