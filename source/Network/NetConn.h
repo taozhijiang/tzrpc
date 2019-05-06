@@ -14,6 +14,8 @@
 
 #include <boost/asio.hpp>
 
+#include <mutex>
+
 namespace tzrpc {
 
 enum class ConnStat : uint8_t {

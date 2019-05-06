@@ -26,6 +26,7 @@ link_directories( /usr/lib64/mysql/
 
 add_executable( perf_case_a perf_case_a.cpp)
 add_executable( perf_case_b perf_case_b.cpp)
+add_executable( perf_case_async perf_case_async.cpp)
 
 set (EXTRA_LIBS Client )
 set (EXTRA_LIBS ${EXTRA_LIBS} Roo glog_syslog )
@@ -37,4 +38,4 @@ set (EXTRA_LIBS ${EXTRA_LIBS} protoc protobuf )
 
 target_link_libraries( perf_case_a -lrt -rdynamic -ldl ${EXTRA_LIBS} )
 target_link_libraries( perf_case_b -lrt -rdynamic -ldl ${EXTRA_LIBS} )
-
+target_link_libraries( perf_case_async -lrt -rdynamic -ldl ${EXTRA_LIBS} )

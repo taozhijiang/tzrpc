@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __NETWORK_TCP_CONN_SYNC_H__
-#define __NETWORK_TCP_CONN_SYNC_H__
+#ifndef __CLIENT_TCP_CONN_SYNC_H__
+#define __CLIENT_TCP_CONN_SYNC_H__
 
 // 同步的TCP连接，主要用于客户端使用
 
@@ -18,6 +18,7 @@ using tzrpc::Message;
 using tzrpc::NetConn;
 using tzrpc::IOBound;
 using tzrpc::ConnStat;
+
 class RpcClientSetting;
 
 class TcpConnSync: public NetConn,
@@ -91,4 +92,4 @@ private:
 } // end namespace tzrpc_client
 
 
-#endif // __NETWORK_TCP_CONN_SYNC_H__
+#endif // __CLIENT_TCP_CONN_SYNC_H__

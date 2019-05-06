@@ -34,7 +34,7 @@ struct RpcRequestHeader {
 
     std::string dump() const {
         char msg[64] {};
-        snprintf(msg, sizeof(msg), "rpc_request_header mgc:%0x, ver:%0x, sid:%0x, opd:%0x.",
+        snprintf(msg, sizeof(msg), "rpc_request_header mgc:%0x, ver:%0x, sid:%0x, opd:%0x ",
                  magic, version, service_id, opcode);
         return msg;
     }
@@ -78,7 +78,7 @@ struct RpcRequestMessage {
 
     std::string dump() const {
         std::string ret = "rpc_request_header: " + header_.dump();
-        ret += ", rpc_request_message_len: " + 
+        ret += ", rpc_request_message_len: " +
                std::to_string(static_cast<long long unsigned int>(payload_.size()));
         ret += ".";
 
