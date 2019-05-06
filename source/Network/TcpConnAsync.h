@@ -110,7 +110,13 @@ private:
     bool handle_socket_ec(const boost::system::error_code& ec);
 
 
+    std::mutex bound_mutex_;
+    
     IOBound recv_bound_;
+
+    // 系统设计原因，服务端需要保证响应数据是完整地发送给客户端的
+    // 因为响应是再线程池中处理的，多个线程池可能会并发的向同一个客户端发送响应数据
+    SendStatus send_status_;
     IOBound send_bound_;
 };
 

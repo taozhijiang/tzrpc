@@ -21,6 +21,9 @@ using tzrpc::NetConn;
 using tzrpc::IOBound;
 using tzrpc::ConnStat;
 
+using tzrpc::SendStatus;
+using tzrpc::RecvStatus;
+
 class RpcClientSetting;
 
 typedef std::function<void(const tzrpc::Message& net_message)> rpc_wrapper_t;
@@ -45,16 +48,25 @@ public:
     TcpConnAsync& operator=(const TcpConnAsync&) = delete;
 
     bool send_net_message(const Message& msg) {
+
         if (client_setting_.send_max_msg_size_ != 0 &&
             msg.header_.length > client_setting_.send_max_msg_size_) {
             log_err("send_max_msg_size %d, but we recv %d",
                     static_cast<int>(client_setting_.send_max_msg_size_), static_cast<int>(msg.header_.length));
             return false;
         }
-        send_bound_.buffer_.append(msg);
+
+        {
+            std::lock_guard<std::mutex> lock(bound_mutex_);
+            send_bound_.buffer_.append(msg);
+        }
+
         return do_write();
     }
 
+    // 在连接创建后，由上层应用发起读取响应请求，然后会根据协议包格式，依次读取
+    // 每个完整的响应报文
+    // !!! 不要在send_net_message调用后再调用这个函数
     bool recv_net_message() {
         return do_read();
     }
@@ -97,7 +109,13 @@ private:
     bool handle_socket_ec(const boost::system::error_code& ec);
 
 
+
+    std::mutex bound_mutex_;
+
     IOBound recv_bound_;
+
+    // 客户端显式发起请求
+    SendStatus send_status_;
     IOBound send_bound_;
 };
 

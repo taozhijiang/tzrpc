@@ -36,12 +36,14 @@ TcpConnAsync::TcpConnAsync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
     client_setting_(client_setting),
     wrapper_handler_(handler),
     io_service_(io_service),
-    strand_(std::make_shared<boost::asio::io_service::strand>(io_service)) {
+    strand_(std::make_shared<boost::asio::io_service::strand>(io_service)),
+    send_status_(SendStatus::kDone) {
 
     set_tcp_nodelay(true);
     set_tcp_nonblocking(true);
 
     set_conn_stat(ConnStat::kWorking);
+    
 }
 
 TcpConnAsync::~TcpConnAsync() {
@@ -51,6 +53,9 @@ TcpConnAsync::~TcpConnAsync() {
 
 bool TcpConnAsync::do_write() {
 
+    if(send_status_ != SendStatus::kDone)
+        return true;
+
     log_debug("strand write ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
@@ -58,22 +63,29 @@ bool TcpConnAsync::do_write() {
         return false;
     }
 
-    if (send_bound_.buffer_.get_length() == 0) {
-        return true;
+
+    {
+        std::lock_guard<std::mutex> lock(bound_mutex_);
+
+        if (send_bound_.buffer_.get_length() == 0) {
+            return true;
+        }
+
+        uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
+                                    (uint32_t)(kFixedIoBufferSize));
+
+        send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
+        send_status_ = SendStatus::kSend;
+
+        async_write(*socket_, boost::asio::buffer(send_bound_.io_block_, to_write),
+                    boost::asio::transfer_exactly(to_write),
+                    strand_->wrap(
+                        std::bind(&TcpConnAsync::write_handler,
+                                shared_from_this(),
+                                std::placeholders::_1,
+                                std::placeholders::_2)));
     }
 
-    uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
-                                 (uint32_t)(kFixedIoBufferSize));
-
-    send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
-
-    async_write(*socket_, boost::asio::buffer(send_bound_.io_block_, to_write),
-                boost::asio::transfer_exactly(to_write),
-                strand_->wrap(
-                    std::bind(&TcpConnAsync::write_handler,
-                              shared_from_this(),
-                              std::placeholders::_1,
-                              std::placeholders::_2)));
     return true;
 }
 
@@ -87,6 +99,8 @@ void TcpConnAsync::write_handler(const boost::system::error_code& ec, size_t byt
 
     // transfer_at_least 应该可以保证将需要的数据传输完，除非错误发生了
     SAFE_ASSERT(bytes_transferred > 0);
+
+    send_status_ = SendStatus::kDone;
 
     // 再次触发写，如果为空就直接返回
     // 函数中会检查，如果内容为空，就直接返回不执行写操作
@@ -116,6 +130,7 @@ int TcpConnAsync::parse_header() {
         log_err("async message header check error %x:%x - %x:%x!",
                 recv_bound_.header_.magic, recv_bound_.header_.version,
                 kHeaderMagic, kHeaderVersion);
+        log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
         return -1;
     }
 
@@ -148,19 +163,20 @@ bool TcpConnAsync::do_read() {
                                  shared_from_this(),
                                  std::placeholders::_1,
                                  std::placeholders::_2)));
+        return true;
+    } 
+
+    int ret = parse_header();
+    if (ret == 0) {
+        do_read_msg();
+        return true;
+    } else if (ret > 0) {
+        do_read();
+        return true;
     } else {
-        int ret = parse_header();
-        if (ret == 0) {
-            do_read_msg();
-            return true;
-        } else if (ret > 0) {
-            do_read();
-            return true;
-        } else {
-            log_err("read error found, shutdown connection...");
-            sock_shutdown_and_close(ShutdownType::kBoth);
-            return false;
-        }
+        log_err("read error found, shutdown connection...");
+        sock_shutdown_and_close(ShutdownType::kBoth);
+        return false;
     }
 
     return true;

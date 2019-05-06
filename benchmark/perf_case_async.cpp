@@ -90,12 +90,10 @@ void* perf_run(void* x_void_ptr) {
         // increment success case
         ++ count;
 
-        ::usleep(5*1000);
-
-        // 异步的请求性能太高，这边达到10000就不再发了
-        if (count >= 10000) {
+        // 异步的请求性能太高，这边达到30000就不再发了
+        if (count >= 30000) {
             stop_time = ::time(NULL);
-            ::sleep(5);  // 等待服务端全部处理完
+            ::sleep(10);  // 等待服务端全部处理完
             std::cout << "break..." << std::endl;
             break;
         }
@@ -128,6 +126,8 @@ int main(int argc, char* argv[]) {
 
     int ch = getchar();
     stop = true;
+    if (stop_time == 0)
+        stop_time = ::time(NULL);
 
     uint64_t count_per_sec = count / ( stop_time - start_time);
     fprintf(stderr, "total count %ld, time: %ld, perf: %ld tps\n", count, stop_time - start_time, count_per_sec);

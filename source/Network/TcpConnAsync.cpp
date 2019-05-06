@@ -30,7 +30,9 @@ TcpConnAsync::TcpConnAsync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
     ops_cancel_mutex_(),
     ops_cancel_timer_(),
     server_(server),
-    strand_(std::make_shared<boost::asio::io_service::strand>(server.io_service_)) {
+    strand_(std::make_shared<boost::asio::io_service::strand>(server.io_service_)),
+    bound_mutex_(),
+    send_status_(SendStatus::kDone) {
 
     set_tcp_nodelay(true);
     set_tcp_nonblocking(true);
@@ -77,6 +79,7 @@ int TcpConnAsync::parse_header() {
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion) {
         log_err("async message header check error!");
+        log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
         return -1;
     }
 
@@ -115,22 +118,22 @@ bool TcpConnAsync::do_read() {
                                          shared_from_this(),
                                          std::placeholders::_1,
                                          std::placeholders::_2)));
-    } else {
-        int ret = parse_header();
-        if (ret == 0) {
-            do_read_msg();
-            return true;
-        } else if(ret > 0) {
-            do_read();
-            return true;
-        } else {
-            log_err("read error found, shutdown connection...");
-            sock_shutdown_and_close(ShutdownType::kBoth);
-            return false;
-        }
-    }
+        return true;
+    } 
+    
 
-    return true;
+    int ret = parse_header();
+    if (ret == 0) {
+        do_read_msg();
+        return true;
+    } else if(ret > 0) {
+        do_read();
+        return true;
+    } 
+
+    log_err("read error found, shutdown connection...");
+    sock_shutdown_and_close(ShutdownType::kBoth);
+    return false;
 }
 
 void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t bytes_transferred) {
@@ -161,11 +164,11 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
     } else if(ret > 0) {
         do_read();
         return;
-    } else {
-        log_err("read_handler error found, shutdown connection...");
-        sock_shutdown_and_close(ShutdownType::kBoth);
-        return;
     }
+
+    log_err("read_handler error found, shutdown connection...");
+    sock_shutdown_and_close(ShutdownType::kBoth);
+    return;
 }
 
 int TcpConnAsync::parse_msg_body(Message& msg) {
@@ -292,7 +295,11 @@ int TcpConnAsync::async_send_message(const Message& msg) {
         return -1;
     }
 
-    send_bound_.buffer_.append(msg);
+    {
+        std::lock_guard<std::mutex> lock(bound_mutex_);
+        send_bound_.buffer_.append(msg);
+    }
+
     do_write();
 
     return 0;
@@ -300,6 +307,10 @@ int TcpConnAsync::async_send_message(const Message& msg) {
 
 
 bool TcpConnAsync::do_write() {
+
+    if (send_status_ != SendStatus::kDone) {
+        return true;
+    }
 
     log_debug("strand write ... in thread %#lx", (long)pthread_self());
 
@@ -313,23 +324,32 @@ bool TcpConnAsync::do_write() {
         return false;
     }
 
-    if (send_bound_.buffer_.get_length() == 0) {
-        return true;
+    {
+
+        std::lock_guard<std::mutex> lock(bound_mutex_);
+
+        if (send_bound_.buffer_.get_length() == 0) {
+            send_status_ = SendStatus::kDone;
+            return true;
+        }
+
+        uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
+                                     (uint32_t)(kFixedIoBufferSize));
+
+        send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
+        send_status_ = SendStatus::kSend;
+
+        set_ops_cancel_timeout();
+        async_write(*socket_, boost::asio::buffer(send_bound_.io_block_, to_write),
+                        boost::asio::transfer_exactly(to_write),
+                                  strand_->wrap(
+                                     std::bind(&TcpConnAsync::write_handler,
+                                         shared_from_this(),
+                                         std::placeholders::_1,
+                                         std::placeholders::_2)));
+
     }
 
-    uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
-                                 (uint32_t)(kFixedIoBufferSize));
-
-    send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
-
-    set_ops_cancel_timeout();
-    async_write(*socket_, boost::asio::buffer(send_bound_.io_block_, to_write),
-                    boost::asio::transfer_exactly(to_write),
-                              strand_->wrap(
-                                 std::bind(&TcpConnAsync::write_handler,
-                                     shared_from_this(),
-                                     std::placeholders::_1,
-                                     std::placeholders::_2)));
     return true;
 }
 
@@ -345,6 +365,8 @@ void TcpConnAsync::write_handler(const boost::system::error_code& ec, size_t byt
 
     // transfer_at_least 应该可以保证将需要的数据传输完，除非错误发生了
     SAFE_ASSERT(bytes_transferred > 0);
+
+    send_status_ = SendStatus::kDone;
 
     // 再次触发写，如果为空就直接返回
     // 函数中会检查，如果内容为空，就直接返回不执行写操作

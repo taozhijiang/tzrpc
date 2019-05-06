@@ -266,6 +266,8 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
                     client_setting_.serv_addr_.c_str(), client_setting_.serv_port_);
             return RpcClientStatus::NETWORK_BEFORE_ERROR;
         }
+
+        conn_async_->recv_net_message();
     }
 
     time_start_ = ::time(NULL);
@@ -290,7 +292,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
     }
 
     // 手动触发异步读取服务端响应
-    conn_async_->recv_net_message();
+    //conn_async_->recv_net_message();
 
     return RpcClientStatus::OK;
 }
