@@ -47,7 +47,7 @@ static std::string generate_random_str() {
     return ss.str();
 }
 
-int async_handler(RpcClientStatus status, const std::string& rsp) {
+int async_handler(RpcClientStatus status, uint16_t service_id, uint16_t opcode, const std::string& rsp) {
 
     if(status != RpcClientStatus::OK) {
         std::cout << "async_handler process failed." << std::endl;

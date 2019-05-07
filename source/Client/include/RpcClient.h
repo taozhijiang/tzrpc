@@ -24,7 +24,7 @@ namespace tzrpc_client {
 // 如果发生了异常，那么status会给予提示
 // 注意：由于是异步处理，所以在高流量的请求下不能保证响应按照原请求的顺序得到执行，所以
 //       rcp_handler_t没有保留req信息
-typedef std::function<int(const RpcClientStatus status, const std::string& rsp)> rpc_handler_t;
+typedef std::function<int(const RpcClientStatus status, uint16_t service_id, uint16_t opcode, const std::string& rsp)> rpc_handler_t;
 extern rpc_handler_t dummy_handler_;
 
 struct RpcClientSetting {

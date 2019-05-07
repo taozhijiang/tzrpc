@@ -198,6 +198,8 @@ bool RpcClientImpl::send_rpc_message_async(const RpcRequestMessage& rpc_request_
 void RpcClientImpl::async_recv_wrapper(const tzrpc::Message& net_message) {
 
     RpcClientStatus status = RpcClientStatus::OK;
+    uint16_t service_id = std::numeric_limits<uint16_t>::max();
+    uint16_t opcode = std::numeric_limits<uint16_t>::max();
     std::string respload {};
 
     do {
@@ -226,13 +228,15 @@ void RpcClientImpl::async_recv_wrapper(const tzrpc::Message& net_message) {
             break;
         }
 
+        service_id = static_cast<uint16_t>(rpc_response_message.header_.service_id);
+        opcode = static_cast<uint16_t>(rpc_response_message.header_.opcode);
         respload = rpc_response_message.payload_;
 
     } while (0);
 
     // call
     if (handler_) {
-        handler_(status, respload);
+        handler_(status, service_id, opcode, respload);
     }
 }
 
