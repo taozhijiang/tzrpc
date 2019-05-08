@@ -13,9 +13,6 @@
 #include <boost/asio.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <other/Log.h>
-using roo::log_api;
-
 #include <Client/include/RpcClient.h>
 #include <Client/TcpConnAsync.h>
 
@@ -43,23 +40,23 @@ TcpConnAsync::TcpConnAsync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
     set_tcp_nonblocking(true);
 
     set_conn_stat(ConnStat::kWorking);
-    
+
 }
 
 TcpConnAsync::~TcpConnAsync() {
-    log_debug("TcpConnAsync SOCKET RELEASED!!!");
+    roo::log_info("TcpConnAsync SOCKET RELEASED!!!");
 }
 
 
 bool TcpConnAsync::do_write() {
 
-    if(send_status_ != SendStatus::kDone)
+    if (send_status_ != SendStatus::kDone)
         return true;
 
-    log_debug("strand write ... in thread %#lx", (long)pthread_self());
+    roo::log_info("strand write ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("socket status error: %d", get_conn_stat());
         return false;
     }
 
@@ -72,7 +69,7 @@ bool TcpConnAsync::do_write() {
         }
 
         uint32_t to_write = std::min((uint32_t)(send_bound_.buffer_.get_length()),
-                                    (uint32_t)(kFixedIoBufferSize));
+                                     (uint32_t)(kFixedIoBufferSize));
 
         send_bound_.buffer_.consume(send_bound_.io_block_, to_write);
         send_status_ = SendStatus::kSend;
@@ -81,9 +78,9 @@ bool TcpConnAsync::do_write() {
                     boost::asio::transfer_exactly(to_write),
                     strand_->wrap(
                         std::bind(&TcpConnAsync::write_handler,
-                                shared_from_this(),
-                                std::placeholders::_1,
-                                std::placeholders::_2)));
+                                  shared_from_this(),
+                                  std::placeholders::_1,
+                                  std::placeholders::_2)));
     }
 
     return true;
@@ -111,8 +108,8 @@ void TcpConnAsync::write_handler(const boost::system::error_code& ec, size_t byt
 int TcpConnAsync::parse_header() {
 
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
-        log_err("we expect at least header read: %d, but get %d",
-                static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
+        roo::log_err("we expect at least header read: %d, but get %d",
+                     static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
 
@@ -127,17 +124,17 @@ int TcpConnAsync::parse_header() {
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion) {
-        log_err("async message header check error %x:%x - %x:%x!",
-                recv_bound_.header_.magic, recv_bound_.header_.version,
-                kHeaderMagic, kHeaderVersion);
-        log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
+        roo::log_err("async message header check error %x:%x - %x:%x!",
+                     recv_bound_.header_.magic, recv_bound_.header_.version,
+                     kHeaderMagic, kHeaderVersion);
+        roo::log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
         return -1;
     }
 
     if (client_setting_.recv_max_msg_size_ != 0 &&
         recv_bound_.header_.length > client_setting_.recv_max_msg_size_) {
-        log_err("send_max_msg_size %d, but we will recv %d",
-                static_cast<int>(client_setting_.recv_max_msg_size_), static_cast<int>(recv_bound_.header_.length));
+        roo::log_err("send_max_msg_size %d, but we will recv %d",
+                     static_cast<int>(client_setting_.recv_max_msg_size_), static_cast<int>(recv_bound_.header_.length));
         return -1;
     }
 
@@ -147,10 +144,10 @@ int TcpConnAsync::parse_header() {
 
 bool TcpConnAsync::do_read() {
 
-    log_debug("strand read ... in thread %#lx", (long)pthread_self());
+    roo::log_info("strand read ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("socket status error: %d", get_conn_stat());
         return false;
     }
 
@@ -164,7 +161,7 @@ bool TcpConnAsync::do_read() {
                                  std::placeholders::_1,
                                  std::placeholders::_2)));
         return true;
-    } 
+    }
 
     int ret = parse_header();
     if (ret == 0) {
@@ -174,7 +171,7 @@ bool TcpConnAsync::do_read() {
         do_read();
         return true;
     } else {
-        log_err("read error found, shutdown connection...");
+        roo::log_err("read error found, shutdown connection...");
         sock_shutdown_and_close(ShutdownType::kBoth);
         return false;
     }
@@ -195,7 +192,7 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
     recv_bound_.buffer_.append_internal(str);
 
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
-        log_notice("unexpect read again!");
+        roo::log_info("unexpect read again!");
         do_read();
         return;
     }
@@ -209,7 +206,7 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
         do_read();
         return;
     } else {
-        log_err("read_handler error found, shutdown connection...");
+        roo::log_err("read_handler error found, shutdown connection...");
         sock_shutdown_and_close(ShutdownType::kBoth);
         return;
     }
@@ -219,8 +216,8 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
 
     // need to read again!
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
-        log_debug("we expect at least message read: %d, but get %d",
-                  static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
+        roo::log_info("we expect at least message read: %d, but get %d",
+                      static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
 
@@ -237,10 +234,10 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
 
 void TcpConnAsync::do_read_msg() {
 
-    log_debug("strand read ... in thread %#lx", (long)pthread_self());
+    roo::log_info("strand read ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("socket status error: %d", get_conn_stat());
         return;
     }
 
@@ -261,8 +258,8 @@ void TcpConnAsync::do_read_msg() {
         if (ret == 0) {
 
             // 转发到RPC请求
-            log_debug("read_message: %s", msg.dump().c_str());
-            log_debug("read message finished, dispatch for RPC process.");
+            roo::log_info("read_message: %s", msg.dump().c_str());
+            roo::log_info("read message finished, dispatch for RPC process.");
 
             if (wrapper_handler_) {
                 wrapper_handler_(msg);
@@ -278,7 +275,7 @@ void TcpConnAsync::do_read_msg() {
 
         } else {
 
-            log_err("read_msg error found, shutdown connection...");
+            roo::log_err("read_msg error found, shutdown connection...");
             sock_shutdown_and_close(ShutdownType::kBoth);
             return;
 
@@ -304,8 +301,8 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
     if (ret == 0) {
 
         // 转发到RPC请求
-        log_debug("read_message: %s", msg.dump().c_str());
-        log_debug("read message finished, dispatch for RPC process.");
+        roo::log_info("read_message: %s", msg.dump().c_str());
+        roo::log_info("read message finished, dispatch for RPC process.");
 
         if (wrapper_handler_) {
             wrapper_handler_(msg);
@@ -320,7 +317,7 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
 
     } else {
 
-        log_err("read_msg_handler error found, shutdown connection...");
+        roo::log_err("read_msg_handler error found, shutdown connection...");
         sock_shutdown_and_close(ShutdownType::kBoth);
         return;
 
@@ -339,16 +336,16 @@ bool TcpConnAsync::handle_socket_ec(const boost::system::error_code& ec) {
     if (ec == boost::asio::error::connection_reset ||
         ec == boost::asio::error::timed_out ||
         ec == boost::asio::error::bad_descriptor) {
-        log_err("error_code: {%d} %s", ec.value(), ec.message().c_str());
+        roo::log_err("error_code: {%d} %s", ec.value(), ec.message().c_str());
         close_socket = true;
     } else if (ec == boost::asio::error::eof) {
         // 正常的，数据传输完毕
         close_socket = true;
     } else if (ec == boost::asio::error::operation_aborted) {
         // like itimeout trigger
-        log_err("error_code: {%d} %s", ec.value(), ec.message().c_str());
+        roo::log_err("error_code: {%d} %s", ec.value(), ec.message().c_str());
     } else {
-        log_err("Undetected error %d, %s ...", ec.value(), ec.message().c_str());
+        roo::log_err("Undetected error %d, %s ...", ec.value(), ec.message().c_str());
         close_socket = true;
     }
 

@@ -12,7 +12,6 @@
 using boost::asio::steady_timer;
 
 #include <other/Log.h>
-using roo::log_api;
 
 #include <concurrency/IoService.h>
 #include <Client/include/RpcClientStatus.h>
@@ -39,9 +38,9 @@ class TcpConnAsync;
 
 typedef std::function<void(const tzrpc::Message& net_message)> rpc_wrapper_t;
 
-class RpcClientImpl: public std::enable_shared_from_this<RpcClientImpl> {
+class RpcClientImpl : public std::enable_shared_from_this<RpcClientImpl> {
 public:
-    RpcClientImpl(const RpcClientSetting& client_setting):
+    RpcClientImpl(const RpcClientSetting& client_setting) :
         client_setting_(client_setting),
         io_service_(),
         call_mutex_(),

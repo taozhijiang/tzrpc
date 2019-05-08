@@ -39,7 +39,7 @@ struct RpcClientSetting {
 
     rpc_handler_t handler_;
 
-    RpcClientSetting():
+    RpcClientSetting() :
         serv_addr_(),
         serv_port_(),
         send_max_msg_size_(0),
@@ -48,7 +48,7 @@ struct RpcClientSetting {
         handler_() {
     }
 
-} __attribute__ ((aligned (4)));
+} __attribute__((aligned(4)));
 
 
 // class forward

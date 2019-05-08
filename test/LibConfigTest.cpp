@@ -5,8 +5,6 @@ using namespace ::testing;
 
 
 #include <scaffold/Setting.h>
-#include <other/Log.h>
-using roo::log_api;
 
 TEST(LibConfigTest, SysConfigInitVefifyTest) {
 

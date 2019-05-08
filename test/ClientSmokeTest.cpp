@@ -9,7 +9,6 @@ using namespace ::testing;
 
 #include <scaffold/Setting.h>
 #include <other/Log.h>
-using roo::log_api;
 
 #include <Protocol/Common.h>
 

@@ -51,8 +51,8 @@ public:
 
         if (client_setting_.send_max_msg_size_ != 0 &&
             msg.header_.length > client_setting_.send_max_msg_size_) {
-            log_err("send_max_msg_size %d, but we recv %d",
-                    static_cast<int>(client_setting_.send_max_msg_size_), static_cast<int>(msg.header_.length));
+            roo::log_err("send_max_msg_size %d, but we recv %d",
+                         static_cast<int>(client_setting_.send_max_msg_size_), static_cast<int>(msg.header_.length));
             return false;
         }
 

@@ -33,7 +33,7 @@ struct RpcRequestHeader {
     uint32_t rev2;
 
     std::string dump() const {
-        char msg[64] {};
+        char msg[64]{};
         snprintf(msg, sizeof(msg), "rpc_request_header mgc:%0x, ver:%0x, sid:%0x, opd:%0x ",
                  magic, version, service_id, opcode);
         return msg;
@@ -54,7 +54,7 @@ struct RpcRequestHeader {
         opcode  = htobe16(opcode);
     }
 
-} __attribute__ ((__packed__));
+} __attribute__((__packed__));
 
 
 struct RpcRequestMessage {
@@ -62,13 +62,13 @@ struct RpcRequestMessage {
     RpcRequestHeader header_;
     std::string payload_;
 
-    RpcRequestMessage():
-        header_({}),
-        payload_({}) {
+    RpcRequestMessage() :
+        header_({ }),
+        payload_({ }) {
     }
 
-    RpcRequestMessage(uint16_t serviceid, uint16_t opcd, const std::string& data):
-        header_({}),
+    RpcRequestMessage(uint16_t serviceid, uint16_t opcd, const std::string& data) :
+        header_({ }),
         payload_(data) {
         header_.magic = kRpcHeaderMagic;
         header_.version = kRpcHeaderVersion;
@@ -79,7 +79,7 @@ struct RpcRequestMessage {
     std::string dump() const {
         std::string ret = "rpc_request_header: " + header_.dump();
         ret += ", rpc_request_message_len: " +
-               std::to_string(static_cast<long long unsigned int>(payload_.size()));
+            std::to_string(static_cast<long long unsigned int>(payload_.size()));
         ret += ".";
 
         return ret;

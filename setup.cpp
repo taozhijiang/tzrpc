@@ -23,20 +23,20 @@ int create_process_pid();
 
 
 static void interrupted_callback(int signal){
-    roo::log_alert("Signal %d received ...", signal);
+    roo::log_warning("Signal %d received ...", signal);
     switch(signal) {
         case SIGHUP:
-            roo::log_notice("SIGHUP recv, do update_run_conf... ");
+            roo::log_warning("SIGHUP recv, do update_run_conf... ");
             tzrpc::Captain::instance().setting_ptr_->update_runtime_setting();
             break;
 
         case SIGUSR1:
-            roo::log_notice("SIGUSR recv, do module_status ... ");
+            roo::log_warning("SIGUSR recv, do module_status ... ");
             {
                 std::string output;
                 tzrpc::Captain::instance().status_ptr_->collect_status(output);
                 std::cout << output << std::endl;
-                roo::log_notice("%s", output.c_str());
+                roo::log_warning("%s", output.c_str());
             }
             break;
 

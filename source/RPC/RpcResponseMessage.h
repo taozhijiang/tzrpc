@@ -54,7 +54,7 @@ struct RpcResponseHeader {
     uint32_t rev2;
 
     std::string dump() const {
-        char msg[64] {};
+        char msg[64]{};
         snprintf(msg, sizeof(msg), "rpc_response_header mgc:%0x, ver:%0x, sid:%0x, opd:%0x",
                  magic, version, service_id, opcode);
         return msg;
@@ -75,7 +75,7 @@ struct RpcResponseHeader {
         opcode  = htobe16(opcode);
     }
 
-} __attribute__ ((__packed__));
+} __attribute__((__packed__));
 
 
 struct RpcResponseMessage {
@@ -83,13 +83,13 @@ struct RpcResponseMessage {
     RpcResponseHeader header_;
     std::string payload_;
 
-    RpcResponseMessage():
-        header_({}),
-        payload_({}) {
+    RpcResponseMessage() :
+        header_({ }),
+        payload_({ }) {
     }
 
-    RpcResponseMessage(uint16_t serviceid, uint16_t opcd, const std::string& data):
-        header_({}),
+    RpcResponseMessage(uint16_t serviceid, uint16_t opcd, const std::string& data) :
+        header_({ }),
         payload_(data) {
         header_.status = RpcResponseStatus::OK;
         header_.magic = kRpcHeaderMagic;
@@ -98,8 +98,8 @@ struct RpcResponseMessage {
         header_.opcode = opcd;
     }
 
-    explicit RpcResponseMessage(enum RpcResponseStatus status):
-        header_({}),
+    explicit RpcResponseMessage(enum RpcResponseStatus status) :
+        header_({ }),
         payload_() {
         header_.status = status;
         header_.magic = kRpcHeaderMagic;
@@ -108,8 +108,8 @@ struct RpcResponseMessage {
 
     std::string dump() const {
         std::string ret = "rpc_response_header: " + header_.dump();
-        ret += ", rpc_response_message_len: " + 
-               std::to_string(static_cast<long long unsigned int>(payload_.size()));
+        ret += ", rpc_response_message_len: " +
+            std::to_string(static_cast<long long unsigned int>(payload_.size()));
         ret += ".";
 
         return ret;

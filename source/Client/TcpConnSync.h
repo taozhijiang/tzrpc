@@ -10,6 +10,7 @@
 
 // 同步的TCP连接，主要用于客户端使用
 
+#include <other/Log.h>
 #include <Network/NetConn.h>
 
 namespace tzrpc_client {
@@ -21,8 +22,8 @@ using tzrpc::ConnStat;
 
 class RpcClientSetting;
 
-class TcpConnSync: public NetConn,
-                   public std::enable_shared_from_this<TcpConnSync> {
+class TcpConnSync : public NetConn,
+    public std::enable_shared_from_this<TcpConnSync> {
 
     friend class RpcClientImpl;
 
@@ -45,8 +46,8 @@ public:
     bool send_net_message(const Message& msg) {
         if (client_setting_.send_max_msg_size_ != 0 &&
             msg.header_.length > client_setting_.send_max_msg_size_) {
-            log_err("send_max_msg_size %d, but we recv %d",
-            static_cast<int>(client_setting_.send_max_msg_size_), static_cast<int>(msg.header_.length));
+            roo::log_err("send_max_msg_size %d, but we recv %d",
+                         static_cast<int>(client_setting_.send_max_msg_size_), static_cast<int>(msg.header_.length));
             return false;
         }
         send_bound_.buffer_.append(msg);

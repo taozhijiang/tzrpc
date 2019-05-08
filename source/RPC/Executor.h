@@ -12,7 +12,6 @@
 #include <xtra_rhel.h>
 
 #include <other/Log.h>
-using roo::log_api;
 
 #include <container/EQueue.h>
 #include <concurrency/ThreadPool.h>
@@ -24,19 +23,19 @@ using roo::log_api;
 namespace tzrpc {
 
 
-class Executor: public Service,
-                public std::enable_shared_from_this<Executor> {
+class Executor : public Service,
+    public std::enable_shared_from_this<Executor> {
 
 public:
 
-    explicit Executor(std::shared_ptr<Service> service_impl):
+    explicit Executor(std::shared_ptr<Service> service_impl) :
         service_impl_(service_impl),
         rpc_queue_(),
         conf_lock_(),
-        conf_({}) {
+        conf_({ }) {
     }
 
-    void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) override {
+    void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance)override {
         rpc_queue_.PUSH(rpc_instance);
     }
 
@@ -58,8 +57,8 @@ private:
     std::mutex   conf_lock_;
     ExecutorConf conf_;
 
-    ExecutorConf get_executor_conf() override {
-        log_err("we should not call here !");
+    ExecutorConf get_executor_conf()override {
+        roo::log_err("we should not call here !");
         SAFE_ASSERT(false);
         return conf_;
     }
@@ -72,14 +71,14 @@ public:
 
     int executor_start() {
 
-        log_notice("about to start executor for host %s ... ", instance_name().c_str());
+        roo::log_info("about to start executor for host %s ... ", instance_name().c_str());
         executor_threads_.start_threads();
         return 0;
     }
 
     int executor_stop_graceful() {
 
-        log_notice("about to stop executor for host %s ... ", instance_name().c_str());
+        roo::log_info("about to stop executor for host %s ... ", instance_name().c_str());
         executor_threads_.graceful_stop_threads();
 
         return 0;
@@ -87,7 +86,7 @@ public:
 
     int executor_join() {
 
-        log_notice("about to join executor for host %s ... ", instance_name().c_str());
+        roo::log_info("about to join executor for host %s ... ", instance_name().c_str());
         executor_threads_.join_threads();
         return 0;
     }

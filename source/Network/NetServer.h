@@ -12,7 +12,6 @@
 #include <libconfig.h++>
 
 #include <other/Log.h>
-using roo::log_api;
 
 #include <concurrency/ThreadPool.h>
 
@@ -61,7 +60,7 @@ private:
 
     bool check_safe_ip(const std::string& ip) {
         std::lock_guard<std::mutex> lock(lock_);
-        return ( safe_ip_.empty() || (safe_ip_.find(ip) != safe_ip_.cend()) );
+        return (safe_ip_.empty() || (safe_ip_.find(ip) != safe_ip_.cend()));
     }
 
     bool get_service_token() {
@@ -71,7 +70,7 @@ private:
         // 此时如果需要变更除非重启服务，或者采用非web方式(比如发送命令)来恢复配置
 
         if (!service_enabled_) {
-            log_debug("service not enabled ...");
+            roo::log_info("service not enabled ...");
             return false;
         }
 
@@ -80,19 +79,19 @@ private:
             return true;
 
         if (service_token_ <= 0) {
-            log_debug("service not speed over ...");
+            roo::log_info("service not speed over ...");
             return false;
         }
 
-        -- service_token_;
+        --service_token_;
         return true;
     }
 
     void withdraw_service_token() {    // 支持将令牌还回去
-        ++ service_token_;
+        ++service_token_;
     }
 
-    void feed_service_token(){
+    void feed_service_token() {
         service_token_ = service_speed_;
     }
 
@@ -101,7 +100,7 @@ private:
 
     // 良好的默认初始化值
 
-    NetConf():
+    NetConf() :
         service_enabled_(true),
         service_speed_(0),
         service_token_(0),
@@ -118,7 +117,7 @@ private:
         io_thread_number_(1) {
     }
 
-} __attribute__ ((aligned (4)));  // end class NetConf
+} __attribute__((aligned(4)));  // end class NetConf
 
 
 
@@ -131,7 +130,7 @@ class NetServer {
 public:
 
     /// Construct the server to listen on the specified TCP address and port
-    explicit NetServer(const std::string& instance_name):
+    explicit NetServer(const std::string& instance_name) :
         instance_name_(instance_name),
         io_service_(),
         acceptor_(),
@@ -150,7 +149,7 @@ public:
         // 线程池开始工作
         io_service_threads_.start_threads();
 
-        acceptor_.reset( new boost::asio::ip::tcp::acceptor(io_service_) );
+        acceptor_.reset(new boost::asio::ip::tcp::acceptor(io_service_));
         acceptor_->open(ep_.protocol());
 
         acceptor_->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
@@ -203,7 +202,7 @@ private:
 public:
     int io_service_stop_graceful() {
 
-        log_err("about to stop io_service... ");
+        roo::log_err("about to stop io_service... ");
 
         io_service_.stop();
         io_service_threads_.graceful_stop_threads();

@@ -20,7 +20,7 @@ namespace tzrpc {
 
 class RpcInstance {
 public:
-    RpcInstance(const std::string& str_request, std::shared_ptr<TcpConnAsync> socket, int msg_size):
+    RpcInstance(const std::string& str_request, std::shared_ptr<TcpConnAsync> socket, int msg_size) :
         start_(::time(NULL)),
         full_socket_(socket),
         request_(str_request),

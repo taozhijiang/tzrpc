@@ -30,8 +30,8 @@ typedef std::weak_ptr<TcpConnAsync>   TcpConnAsyncWeakPtr;
 
 
 
-class TcpConnAsync: public NetConn,
-                    public std::enable_shared_from_this<TcpConnAsync> {
+class TcpConnAsync : public NetConn,
+    public std::enable_shared_from_this<TcpConnAsync> {
 
 public:
 
@@ -53,11 +53,11 @@ public:
 
 private:
 
-    virtual bool do_read() override;
-    virtual void read_handler(const boost::system::error_code& ec, std::size_t bytes_transferred) override;
+    virtual bool do_read()override;
+    virtual void read_handler(const boost::system::error_code& ec, std::size_t bytes_transferred)override;
 
-    virtual bool do_write() override;
-    virtual void write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred) override;
+    virtual bool do_write()override;
+    virtual void write_handler(const boost::system::error_code& ec, std::size_t bytes_transferred)override;
 
     void do_read_msg();
     void read_msg_handler(const boost::system::error_code& ec, std::size_t bytes_transferred);
@@ -111,7 +111,7 @@ private:
 
 
     std::mutex bound_mutex_;
-    
+
     IOBound recv_bound_;
 
     // 系统设计原因，服务端需要保证响应数据是完整地发送给客户端的
