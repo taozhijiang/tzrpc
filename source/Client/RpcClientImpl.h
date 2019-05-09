@@ -43,6 +43,7 @@ public:
     RpcClientImpl(const RpcClientSetting& client_setting) :
         client_setting_(client_setting),
         io_service_(),
+        roo_io_service_(),
         call_mutex_(),
         time_start_(0),
         was_timeout_(false),
@@ -53,6 +54,11 @@ public:
     }
 
     ~RpcClientImpl();
+
+    // 可以传递出来给其他模块使用
+    std::shared_ptr<boost::asio::io_service> get_ioservice() const {
+        return client_setting_.io_service_;
+    }
 
     bool init();
 
@@ -71,7 +77,9 @@ public:
 private:
 
     RpcClientSetting client_setting_;
-    std::unique_ptr<roo::IoService> io_service_;
+    std::shared_ptr<boost::asio::io_service> io_service_;
+    std::unique_ptr<roo::IoService> roo_io_service_;
+    
 
     // 确保不会客户端多线程调用，导致底层的连接串话
     std::mutex call_mutex_;

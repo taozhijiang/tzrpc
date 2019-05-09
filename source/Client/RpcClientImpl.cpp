@@ -27,18 +27,27 @@ using tzrpc::kRpcHeaderMagic;
 
 namespace tzrpc_client {
 
+
 bool RpcClientImpl::init() {
 
     handler_ = client_setting_.handler_;
 
-    io_service_ = make_unique<roo::IoService>();
-    if (!io_service_ || !io_service_->init()) {
+    if(client_setting_.io_service_) {
+        roo::log_info("RpcClientImpl using provided boost::asio::io_service instance.");
+        return true;
+    }
+
+    roo::log_info("create new IoService instance.");
+    roo_io_service_ = make_unique<roo::IoService>();
+    if (!roo_io_service_ || !roo_io_service_->init()) {
         roo::log_err("create and initialized IoService failed.");
         return false;
     }
 
+    client_setting_.io_service_ = roo_io_service_->io_service_ptr();
     return true;
 }
+
 
 RpcClientImpl::~RpcClientImpl() {
 
@@ -74,7 +83,7 @@ void RpcClientImpl::set_rpc_call_timeout(uint32_t sec, bool sync) {
     if (rpc_call_timer_) {
         rpc_call_timer_->cancel(ignore_ec);
     } else {
-        rpc_call_timer_.reset(new steady_timer(io_service_->get_io_service()));
+        rpc_call_timer_.reset(new steady_timer(*client_setting_.io_service_));
     }
 
     SAFE_ASSERT(sec > 0);
@@ -111,7 +120,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
 
         boost::system::error_code ec;
         std::shared_ptr<boost::asio::ip::tcp::socket> socket_ptr
-            = std::make_shared<boost::asio::ip::tcp::socket>(io_service_->get_io_service());
+            = std::make_shared<boost::asio::ip::tcp::socket>(*client_setting_.io_service_);
 
         socket_ptr->connect(boost::asio::ip::tcp::endpoint(
                                 boost::asio::ip::address::from_string(client_setting_.serv_addr_), client_setting_.serv_port_), ec);
@@ -123,7 +132,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
 
         }
 
-        conn_sync_.reset(new TcpConnSync(socket_ptr, io_service_->get_io_service(), client_setting_));
+        conn_sync_.reset(new TcpConnSync(socket_ptr, *client_setting_.io_service_, client_setting_));
         if (!conn_sync_) {
             roo::log_err("create socket %s:%u failed.",
                          client_setting_.serv_addr_.c_str(), client_setting_.serv_port_);
@@ -250,7 +259,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
 
         boost::system::error_code ec;
         std::shared_ptr<boost::asio::ip::tcp::socket> socket_ptr
-            = std::make_shared<boost::asio::ip::tcp::socket>(io_service_->get_io_service());
+            = std::make_shared<boost::asio::ip::tcp::socket>(*client_setting_.io_service_);
 
         socket_ptr->connect(boost::asio::ip::tcp::endpoint(
                                 boost::asio::ip::address::from_string(client_setting_.serv_addr_), client_setting_.serv_port_), ec);
@@ -262,7 +271,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
 
         }
 
-        conn_async_.reset(new TcpConnAsync(socket_ptr, io_service_->get_io_service(), client_setting_,
+        conn_async_.reset(new TcpConnAsync(socket_ptr, *client_setting_.io_service_, client_setting_,
                                            std::bind(&RpcClientImpl::async_recv_wrapper, shared_from_this(),
                                                      std::placeholders::_1)));
         if (!conn_async_) {

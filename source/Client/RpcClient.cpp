@@ -49,6 +49,13 @@ RpcClient::RpcClient(const libconfig::Setting& setting, const rpc_handler_t& han
         throw roo::ConstructException("construct RpcClient failed.");
 }
 
+RpcClient::RpcClient(const RpcClientSetting& setting):
+    initialized_(false),
+    client_setting_(setting) {   
+   if (!init(setting.serv_addr_, setting.serv_port_))
+        throw roo::ConstructException("construct RpcClient failed.");
+}
+
 RpcClient::~RpcClient() { }
 
 bool RpcClient::init(const std::string& addr, uint16_t port) {
