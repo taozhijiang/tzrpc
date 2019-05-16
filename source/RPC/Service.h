@@ -33,12 +33,9 @@ struct ExecutorConf {
 class Service {
 
 public:
-    Service() {}
-    ~Service() {}
-
-    // 禁止拷贝
-    Service(const Service&) = delete;
-    Service& operator=(const Service&) = delete;
+    Service() = default;
+    virtual ~Service() = default;
+    
 
     // 根据opCode分发rpc请求的处理
     virtual void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) = 0;

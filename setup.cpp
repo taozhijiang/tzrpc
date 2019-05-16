@@ -10,9 +10,11 @@
 #include <version.h>
 #include <other/Log.h>
 
-#include <Captain.h>
 #include <scaffold/Setting.h>
 #include <scaffold/Status.h>
+
+#include <Captain.h>
+using tzrpc::Captain;
 
 // API for main
 
@@ -23,25 +25,25 @@ int create_process_pid();
 
 
 static void interrupted_callback(int signal){
-    roo::log_warning("Signal %d received ...", signal);
+    roo::log_warning("signal %d received ...", signal);
     switch(signal) {
         case SIGHUP:
-            roo::log_warning("SIGHUP recv, do update_run_conf... ");
-            tzrpc::Captain::instance().setting_ptr_->update_runtime_setting();
+            roo::log_warning("signal SIGHUP recv, do update_run_conf... ");
+            Captain::instance().setting_ptr_->update_runtime_setting();
             break;
 
         case SIGUSR1:
-            roo::log_warning("SIGUSR recv, do module_status ... ");
+            roo::log_warning("signal SIGUSR recv, do module_status ... ");
             {
                 std::string output;
-                tzrpc::Captain::instance().status_ptr_->collect_status(output);
+                Captain::instance().status_ptr_->collect_status(output);
                 std::cout << output << std::endl;
                 roo::log_warning("%s", output.c_str());
             }
             break;
 
         default:
-            roo::log_err("Unhandled signal: %d", signal);
+            roo::log_err("Unhandled signal %d received.", signal);
             break;
     }
 }
@@ -64,7 +66,7 @@ void usage() {
        << ": ver " << PROGRAM_VERSION << " * " << std::endl;
 
     ss << std::endl;
-    ss << "\t -c cfgFile  specify config file, default " << program_invocation_short_name << ".conf. " << std::endl;
+    ss << "\t -c cfgFile  specify config file, or using default " << program_invocation_short_name << ".conf. " << std::endl;
     ss << "\t -d          daemonize service." << std::endl;
     ss << "\t -v          print version info." << std::endl;
     ss << std::endl;
@@ -105,7 +107,7 @@ int create_process_pid() {
     FILE* fp = fopen(pid_file, "w+");
 
     if (!fp) {
-        roo::log_err("Create pid file %s failed!", pid_file);
+        roo::log_err("Create pid_file at %s failed!", pid_file);
         return -1;
     }
 

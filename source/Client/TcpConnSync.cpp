@@ -41,7 +41,7 @@ TcpConnSync::~TcpConnSync() {
 int TcpConnSync::parse_header() {
 
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
-        roo::log_err("we expect at least header read: %d, but get %d",
+        roo::log_err("Expect recv at least head length: %d, but only get %d.",
                      static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
@@ -57,14 +57,14 @@ int TcpConnSync::parse_header() {
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion) {
-        roo::log_err("message header check error!");
-        roo::log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
+        roo::log_err("async message head check failed.");
+        roo::log_err("dump recv_bound.header_: %s]", recv_bound_.header_.dump().c_str());
         return -1;
     }
 
     if (client_setting_.recv_max_msg_size_ != 0 &&
         recv_bound_.header_.length > client_setting_.recv_max_msg_size_) {
-        roo::log_err("recv_max_msg_size %d, but we recv %d",
+        roo::log_err("Limit recv_max_msg_size length to %d, but need to recv content length %d.",
                      static_cast<int>(client_setting_.recv_max_msg_size_), static_cast<int>(recv_bound_.header_.length));
         return -1;
     }
@@ -76,8 +76,8 @@ int TcpConnSync::parse_msg_body(Message& msg) {
 
     // need to read again!
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
-        roo::log_err("we expect at least message read: %d, but get %d",
-                     static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
+        roo::log_info("Expect recv at least body length: %d, but only get %d. do_read again...",
+                      static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
 
@@ -96,7 +96,7 @@ int TcpConnSync::parse_msg_body(Message& msg) {
 bool TcpConnSync::do_read(Message& msg) {
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        roo::log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("Check socket status error, current status %d.", get_conn_stat());
         return false;
     }
 
@@ -123,7 +123,7 @@ bool TcpConnSync::do_read(Message& msg) {
         return do_read_msg(msg);
     }
 
-    roo::log_err("read error found, shutdown connection...");
+    roo::log_err("Recv message head error found, shutdown connection ...");
     sock_shutdown_and_close(ShutdownType::kBoth);
     return false;
 }
@@ -131,7 +131,7 @@ bool TcpConnSync::do_read(Message& msg) {
 bool TcpConnSync::do_read_msg(Message& msg) {
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        roo::log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("Check socket status error, current status %d.", get_conn_stat());
         return false;
     }
 
@@ -159,7 +159,7 @@ bool TcpConnSync::do_read_msg(Message& msg) {
         return true;
     }
 
-    roo::log_err("read_msg error found, shutdown connection...");
+    roo::log_err("Recv message body error found, shutdown connection ...");
     sock_shutdown_and_close(ShutdownType::kBoth);
     return false;
 }
@@ -167,7 +167,7 @@ bool TcpConnSync::do_read_msg(Message& msg) {
 bool TcpConnSync::do_write() {
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        roo::log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("Check socket status error, current status %d.", get_conn_stat());
         return false;
     }
 

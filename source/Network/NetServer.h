@@ -8,6 +8,8 @@
 #ifndef __NETWORK_NET_SERVER_H__
 #define __NETWORK_NET_SERVER_H__
 
+#include <xtra_rhel.h>
+
 #include <mutex>
 #include <libconfig.h++>
 
@@ -28,6 +30,8 @@ class NetServer;
 class NetConf {
 
     friend class NetServer;
+
+    __noncopyable__(NetConf)
 
 private:
 
@@ -79,18 +83,19 @@ private:
             return true;
 
         if (service_token_ <= 0) {
-            roo::log_info("service not speed over ...");
+            roo::log_info("service should not speed over ...");
             return false;
         }
 
-        --service_token_;
+        service_token_ = service_token_ - 1;
         return true;
     }
 
     void withdraw_service_token() {    // 支持将令牌还回去
-        ++service_token_;
+        ++ service_token_;
     }
 
+    // 喂狗
     void feed_service_token() {
         service_token_ = service_speed_;
     }
@@ -98,7 +103,7 @@ private:
     std::shared_ptr<steady_timer> timed_feed_token_;
     void timed_feed_token_handler(const boost::system::error_code& ec);
 
-    // 良好的默认初始化值
+    // 行为良好的默认初始化值
 
     NetConf() :
         service_enabled_(true),
@@ -127,6 +132,8 @@ class NetServer {
 
     friend class TcpConnAsync;
 
+    __noncopyable__(NetServer)
+
 public:
 
     /// Construct the server to listen on the specified TCP address and port
@@ -137,10 +144,7 @@ public:
         conf_(),
         io_service_threads_() {
     }
-
-    // 禁止拷贝
-    NetServer(const NetServer&) = delete;
-    NetServer& operator=(const NetServer&) = delete;
+    ~NetServer() = default;
 
     bool init();
 
@@ -202,7 +206,7 @@ private:
 public:
     int io_service_stop_graceful() {
 
-        roo::log_err("about to stop io_service... ");
+        roo::log_warning("About to stop io_service... ");
 
         io_service_.stop();
         io_service_threads_.graceful_stop_threads();

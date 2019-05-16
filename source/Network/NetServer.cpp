@@ -5,8 +5,6 @@
  *
  */
 
-#include <xtra_rhel.h>
-
 #include <Network/NetServer.h>
 #include <Network/TcpConnAsync.h>
 
@@ -30,7 +28,7 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
     conf.lookupValue("rpc.network.bind_addr", bind_addr_);
     conf.lookupValue("rpc.network.bind_port", bind_port_);
     if (bind_addr_.empty() || bind_port_ <= 0) {
-        roo::log_err("invalid rpc.network. bind_addr %s & bind_port %d",
+        roo::log_err("invalid rpc.network. bind_addr %s & bind_port %d.",
                      bind_addr_.c_str(), bind_port_);
         return false;
     }
@@ -53,7 +51,7 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
     }
 
     if (!safe_ip_.empty()) {
-        roo::log_warning("safe_ip not empty, totally contain %d items",
+        roo::log_warning("safe_ip not empty, totally contain %d items.",
                          static_cast<int>(safe_ip_.size()));
     }
 
@@ -105,14 +103,14 @@ bool NetConf::load_conf(const libconfig::Config& conf) {
         return false;
     }
 
-    roo::log_info("NetConf parse conf OK!");
+    roo::log_info("NetConf conf parse successfully!");
     return true;
 }
 
 void NetConf::timed_feed_token_handler(const boost::system::error_code& ec) {
 
     if (service_speed_ == 0) {
-        roo::log_warning("unlock speed jail, close the timer.");
+        roo::log_warning("Unlock speed limit, so close the feed timer.");
         timed_feed_token_.reset();
         return;
     }
@@ -134,7 +132,7 @@ bool NetServer::init() {
     // protect cfg race conditon
     std::lock_guard<std::mutex> lock(conf_.lock_);
     if (!conf_.load_conf(setting_ptr)) {
-        roo::log_err("Load setting from Setting failed!");
+        roo::log_err("Load setting from roo::Setting failed.");
         return false;
     }
 
@@ -143,7 +141,7 @@ bool NetServer::init() {
     roo::log_warning("create listen endpoint for %s:%d",
                      conf_.bind_addr_.c_str(), conf_.bind_port_);
 
-    roo::log_info("socket/session conn cancel time_out: %d secs, enabled: %s",
+    roo::log_info("socket/session conn cancel time_out: %d secs, enabled: %s.",
                   conf_.ops_cancel_time_out_,
                   conf_.ops_cancel_time_out_ > 0 ? "true" : "false");
 
@@ -159,14 +157,14 @@ bool NetServer::init() {
             std::bind(&NetConf::timed_feed_token_handler, &conf_, std::placeholders::_1));
     }
 
-    roo::log_info("rpc.network service enabled: %s, speed: %d tps",
+    roo::log_info("rpc.network service enabled: %s, speed: %d tps.",
                   conf_.service_enabled_ ? "true" : "false",
                   conf_.service_speed_);
 
     if (!io_service_threads_.init_threads(
             std::bind(&NetServer::io_service_run, this, std::placeholders::_1),
             conf_.io_thread_number_)) {
-        roo::log_err("NetServer::io_service_run init task failed!");
+        roo::log_err("NetServer::io_service_run init task failed.");
         return false;
     }
 
@@ -182,6 +180,7 @@ bool NetServer::init() {
         std::bind(&NetServer::module_status, this,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
+    roo::log_warning("NetServer initialize successfully.");
     return true;
 }
 
@@ -200,23 +199,23 @@ void NetServer::accept_handler(const boost::system::error_code& ec, SocketPtr so
     do {
 
         if (ec) {
-            roo::log_err("error during accept with %d, %s", ec.value(), ec.message().c_str());
+            roo::log_err("Recevied error when accept client with {%d} %s.", ec.value(), ec.message().c_str());
             break;
         }
 
         boost::system::error_code ignore_ec;
         auto remote = sock_ptr->remote_endpoint(ignore_ec);
         if (ignore_ec) {
-            roo::log_err("get remote info failed:%d, %s", ignore_ec.value(), ignore_ec.message().c_str());
+            roo::log_err("Retrieve remote client info failed with{%d} %s.", ignore_ec.value(), ignore_ec.message().c_str());
             break;
         }
 
         std::string remote_ip = remote.address().to_string(ignore_ec);
-        roo::log_info("remote Client Info: %s:%d", remote_ip.c_str(), remote.port());
+        roo::log_info("Remote Client Info %s:%d", remote_ip.c_str(), remote.port());
 
 
         if (!conf_.check_safe_ip(remote_ip)) {
-            roo::log_err("check safe_ip failed for: %s", remote_ip.c_str());
+            roo::log_err("Check SafeIp failed for: %s", remote_ip.c_str());
 
             sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
             sock_ptr->close(ignore_ec);
@@ -224,7 +223,7 @@ void NetServer::accept_handler(const boost::system::error_code& ec, SocketPtr so
         }
 
         if (!conf_.get_service_token()) {
-            roo::log_err("request network service token failed, enabled: %s, speed: %d",
+            roo::log_err("Request network speed token failed, current setting enabled: %s, speed: %d.",
                          conf_.service_enabled_ ? "true" : "false", conf_.service_speed_);
 
             sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
@@ -234,7 +233,7 @@ void NetServer::accept_handler(const boost::system::error_code& ec, SocketPtr so
 
         if (conf_.service_concurrency_ != 0 &&
             conf_.service_concurrency_ < TcpConnAsync::current_concurrency_) {
-            roo::log_err("service_concurrency_ error, limit: %d, current: %d",
+            roo::log_err("Service Concurrency limit error, current setting limit: %d, and already connections: %d.",
                          conf_.service_concurrency_, TcpConnAsync::current_concurrency_.load());
             sock_ptr->shutdown(boost::asio::socket_base::shutdown_both, ignore_ec);
             sock_ptr->close(ignore_ec);
@@ -256,7 +255,7 @@ void NetServer::io_service_run(roo::ThreadObjPtr ptr) {
     while (true) {
 
         if (unlikely(ptr->status_ == roo::ThreadStatus::kTerminating)) {
-            roo::log_err("thread %#lx is about to terminating...", (long)pthread_self());
+            roo::log_err("io_service thread %#lx is about to terminating...", (long)pthread_self());
             break;
         }
 
@@ -323,24 +322,24 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
 
     NetConf conf{};
     if (!conf.load_conf(cfg)) {
-        roo::log_err("load conf for HttpConf failed.");
+        roo::log_err("Load new setting for NetServer failed.");
         return -1;
     }
 
     if (conf_.session_cancel_time_out_ != conf.session_cancel_time_out_) {
-        roo::log_warning("update session_cancel_time_out from %d to %d",
+        roo::log_warning("update session_cancel_time_out from %d to %d.",
                          conf_.session_cancel_time_out_, conf.session_cancel_time_out_);
         conf_.session_cancel_time_out_ = conf.session_cancel_time_out_;
     }
 
     if (conf_.ops_cancel_time_out_ != conf.ops_cancel_time_out_) {
-        roo::log_warning("update ops_cancel_time_out from %d to %d",
+        roo::log_warning("update ops_cancel_time_out from %d to %d.",
                          conf_.ops_cancel_time_out_, conf.ops_cancel_time_out_);
         conf_.ops_cancel_time_out_ = conf.ops_cancel_time_out_;
     }
 
     {
-        roo::log_warning("swap safe_ips...");
+        roo::log_warning("about to swap SafeIP ...");
 
         // protect cfg race conditon
         std::lock_guard<std::mutex> lock(conf_.lock_);
@@ -348,7 +347,7 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
     }
 
     if (conf_.service_speed_ != conf.service_speed_) {
-        roo::log_warning("update service_speed from %d to %d",
+        roo::log_warning("update service_speed from %d to %d.",
                          conf_.service_speed_, conf.service_speed_);
         conf_.service_speed_ = conf.service_speed_;
 
@@ -358,7 +357,7 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
             // 直接重置定时器，无论有没有
             conf_.timed_feed_token_.reset(new steady_timer(io_service_)); // 1sec
             if (!conf_.timed_feed_token_) {
-                roo::log_err("Create timed_feed_token_ failed!");
+                roo::log_err("Create timed_feed_token for speed limit use failed.");
                 return -1;
             }
 
@@ -374,7 +373,7 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
         }
     }
 
-    roo::log_warning("service enabled: %s, speed: %d",
+    roo::log_warning("service speed limit enabled: %s, speed: %d.",
                      conf_.service_enabled_ ? "true" : "false",
                      conf_.service_speed_);
 
@@ -385,7 +384,7 @@ int NetServer::module_runtime(const libconfig::Config& cfg) {
     }
 
     if (conf_.service_concurrency_ != 0) {
-        roo::log_warning("service_concurrency: %d",  conf_.service_concurrency_);
+        roo::log_warning("Service Concurrency limit %d.",  conf_.service_concurrency_);
     }
 
     return 0;

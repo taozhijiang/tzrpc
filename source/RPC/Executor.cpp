@@ -33,14 +33,14 @@ bool Executor::init() {
 
     if (conf_.exec_thread_number_hard_ > conf_.exec_thread_number_ &&
         conf_.exec_thread_step_size_ > 0) {
-        roo::log_info("we will support thread adjust for %s, with param %d:%d",
+        roo::log_info("Service %s will support thread dynamiclly adjustment, with param %d:%d",
                       instance_name().c_str(),
                       conf_.exec_thread_number_hard_, conf_.exec_thread_step_size_);
 
         if (!Captain::instance().timer_ptr_->add_timer(
                 std::bind(&Executor::executor_threads_adjust, shared_from_this(), std::placeholders::_1),
                 1 * 1000, true)) {
-            roo::log_err("create thread adjust timer failed.");
+            roo::log_err("Create thread adjust timer task failed.");
             return false;
         }
     }
@@ -77,7 +77,7 @@ void Executor::executor_threads_adjust(const boost::system::error_code& ec) {
     }
 
     if (expect_thread != conf.exec_thread_number_) {
-        roo::log_warning("start thread number: %d, expect resize to %d",
+        roo::log_warning("Start with thread number: %d before, expect resize to %d",
                          conf.exec_thread_number_, expect_thread);
     }
 
@@ -113,7 +113,7 @@ void Executor::executor_service_run(roo::ThreadObjPtr ptr) {
     }
 
     ptr->status_ = roo::ThreadStatus::kDead;
-    roo::log_warning("io_service thread %#lx is about to terminate ... ", (long)pthread_self());
+    roo::log_warning("executor_service thread %#lx is about to terminate ... ", (long)pthread_self());
 
     return;
 
@@ -142,9 +142,8 @@ int Executor::module_status(std::string& module, std::string& name, std::string&
     std::string subValue;
     service_impl_->module_status(nullModule, subKey, subValue);
 
-    // collect
+    // collect whole info
     val = ss.str() + subValue;
-
     return 0;
 }
 

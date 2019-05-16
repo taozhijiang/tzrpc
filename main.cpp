@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     if (atomic_int.is_lock_free()) {
         roo::log_warning(">>> GOOD <<<, your system atomic is lock_free ...");
     } else {
-        roo::log_err(">>> BAD <<<, your system atomic is not lock_free, may impact performance ...");
+        roo::log_err(">>> BAD <<<, your system atomic is not lock_free, which may impact performance ...");
     }
 
 
@@ -65,14 +65,14 @@ int main(int argc, char* argv[]) {
 
     // daemonize should before any thread creation...
     if (daemonize) {
-        roo::log_warning("we will daemonize this service...");
+        roo::log_warning("daemonize this service...");
 
         bool chdir = false; // leave the current working directory in case
                             // the user has specified relative paths for
                             // the config file, etc
         bool close = true;  // close stdin, stdout, stderr
         if (::daemon(!chdir, !close) != 0) {
-            roo::log_err("call to daemon() failed: %s.", strerror(errno));
+            roo::log_err("Call daemon() failed with %d(%s).", errno, strerror(errno));
             ::exit(EXIT_FAILURE);
         }
     }
@@ -84,20 +84,19 @@ int main(int argc, char* argv[]) {
     roo::backtrace_init();
 
     if(!tzrpc::Captain::instance().init(cfgFile)) {
-        roo::log_err("system manager init error!");
+        roo::log_err("Captain init failed!");
         ::exit(EXIT_FAILURE);
     }
 
     std::time_t now = boost::chrono::system_clock::to_time_t(boost::chrono::system_clock::now());
     char mbstr[32] {};
     std::strftime(mbstr, sizeof(mbstr), "%F %T", std::localtime(&now));
-    roo::log_warning("service started at %s", mbstr);
+    roo::log_warning("service started at %s.", mbstr);
+    roo::log_warning("service initialized successfully!");
 
-    roo::log_warning("whole service initialized ok!");
     tzrpc::Captain::instance().service_joinall();
 
     roo::Ssl_thread_clean();
-
     return 0;
 }
 

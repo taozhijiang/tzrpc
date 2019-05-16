@@ -17,7 +17,7 @@ using namespace tzrpc_client;
 
 
 //
-// 短连接的性能
+// 长连接的性能
 //
 
 volatile bool start = false;

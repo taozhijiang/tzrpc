@@ -37,12 +37,12 @@ TcpConnAsync::TcpConnAsync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
     set_tcp_nodelay(true);
     set_tcp_nonblocking(true);
 
-    ++current_concurrency_;
+    ++ current_concurrency_;
 }
 
 TcpConnAsync::~TcpConnAsync() {
 
-    --current_concurrency_;
+    -- current_concurrency_;
     roo::log_info("TcpConnAsync SOCKET RELEASED!!!");
 }
 
@@ -62,7 +62,7 @@ void TcpConnAsync::stop() {
 int TcpConnAsync::parse_header() {
 
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
-        roo::log_err("we expect at least header read: %d, but get %d",
+        roo::log_err("Expect recv at least head length: %d, but only get %d.",
                      static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
@@ -78,14 +78,14 @@ int TcpConnAsync::parse_header() {
 
     if (recv_bound_.header_.magic != kHeaderMagic ||
         recv_bound_.header_.version != kHeaderVersion) {
-        roo::log_err("async message header check error!");
-        roo::log_err("dump recv_bound.header_: %s", recv_bound_.header_.dump().c_str());
+        roo::log_err("async message head check failed.");
+        roo::log_err("dump recv_bound.header_: %s]", recv_bound_.header_.dump().c_str());
         return -1;
     }
 
     if (server_.recv_max_msg_size() != 0 &&
-        recv_bound_.header_.length > server_.recv_max_msg_size()) {
-        roo::log_err("send_max_msg_size %d, but we will recv %d",
+        recv_bound_.header_.length > static_cast<uint32_t>(server_.recv_max_msg_size())) {
+        roo::log_err("Limit recv_max_msg_size length to %d, but need to recv content length %d.",
                      static_cast<int>(server_.recv_max_msg_size()), static_cast<int>(recv_bound_.header_.length));
         return -1;
     }
@@ -96,15 +96,15 @@ int TcpConnAsync::parse_header() {
 
 bool TcpConnAsync::do_read() {
 
-    roo::log_info("strand read ... in thread %#lx", (long)pthread_self());
+//    roo::log_info("strand read ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        roo::log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("Check socket status error, current status %d.", get_conn_stat());
         return false;
     }
 
     if (was_ops_cancelled()) {
-        roo::log_err("socket operation canceled");
+        roo::log_err("Socket operation was already cancelled.");
         return false;
     }
 
@@ -131,7 +131,7 @@ bool TcpConnAsync::do_read() {
         return true;
     }
 
-    roo::log_err("read error found, shutdown connection...");
+    roo::log_err("Recv message head error found, shutdown connection ...");
     sock_shutdown_and_close(ShutdownType::kBoth);
     return false;
 }
@@ -151,7 +151,8 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
     recv_bound_.buffer_.append_internal(str);
 
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
-        roo::log_warning("unexpect read again!");
+         roo::log_err("Expect recv at least head length: %d, but only get %d. do_read again...",
+                      static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
         do_read();
         return;
     }
@@ -166,7 +167,7 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
         return;
     }
 
-    roo::log_err("read_handler error found, shutdown connection...");
+    roo::log_err("Recv message head error found, shutdown connection ...");
     sock_shutdown_and_close(ShutdownType::kBoth);
     return;
 }
@@ -175,7 +176,7 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
 
     // need to read again!
     if (recv_bound_.buffer_.get_length() < recv_bound_.header_.length) {
-        roo::log_info("we expect at least message read: %d, but get %d",
+        roo::log_info("Expect recv at least body length: %d, but only get %d. do_read again...",
                       static_cast<int>(recv_bound_.header_.length), static_cast<int>(recv_bound_.buffer_.get_length()));
         return 1;
     }
@@ -193,15 +194,15 @@ int TcpConnAsync::parse_msg_body(Message& msg) {
 
 void TcpConnAsync::do_read_msg() {
 
-    roo::log_info("strand read ... in thread %#lx", (long)pthread_self());
+    // roo::log_info("strand read ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        roo::log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("Check socket status error, current status %d.", get_conn_stat());
         return;
     }
 
     if (was_ops_cancelled()) {
-        roo::log_err("socket operation canceled");
+        roo::log_err("Socket operation was already cancelled.");
         return;
     }
 
@@ -235,13 +236,11 @@ void TcpConnAsync::do_read_msg() {
             do_read_msg();
             return;
 
-        } else {
-
-            roo::log_err("read_msg error found, shutdown connection...");
-            sock_shutdown_and_close(ShutdownType::kBoth);
-            return;
-
         }
+        
+        roo::log_err("Recv message body error found, shutdown connection ...");
+        sock_shutdown_and_close(ShutdownType::kBoth);
+        return;
     }
 }
 
@@ -277,20 +276,18 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
 
         return do_read_msg();
 
-    } else {
-
-        roo::log_err("read_msg_handler error found, shutdown connection...");
-        sock_shutdown_and_close(ShutdownType::kBoth);
-        return;
-
     }
+    
+    roo::log_err("read_msg_handler error found, shutdown connection...");
+    sock_shutdown_and_close(ShutdownType::kBoth);
+    return;
 }
 
 int TcpConnAsync::async_send_message(const Message& msg) {
 
     if (server_.send_max_msg_size() != 0 &&
-        msg.header_.length > server_.send_max_msg_size()) {
-        roo::log_err("send_max_msg_size %d, but we will send %d",
+        msg.header_.length > static_cast<uint32_t>(server_.send_max_msg_size())) {
+        roo::log_err("Limit send_max_msg_size length to %d, but need to send content length %d.",
                      static_cast<int>(server_.send_max_msg_size()), static_cast<int>(msg.header_.length));
         return -1;
     }
@@ -308,19 +305,22 @@ int TcpConnAsync::async_send_message(const Message& msg) {
 
 bool TcpConnAsync::do_write() {
 
+    // 如果之前的发送没有完成，则这次放弃主动发送请求。等待本次发送完成的时候，会自动
+    // 触发剩余数据的发送操作
     if (send_status_ != SendStatus::kDone) {
+        roo::log_info("SendStatus is not finished, give up this active write trigger.");
         return true;
     }
 
-    roo::log_info("strand write ... in thread %#lx", (long)pthread_self());
+    // roo::log_info("strand write ... in thread %#lx", (long)pthread_self());
 
     if (get_conn_stat() != ConnStat::kWorking) {
-        roo::log_err("socket status error: %d", get_conn_stat());
+        roo::log_err("Check socket status error, current status %d.", get_conn_stat());
         return false;
     }
 
     if (was_ops_cancelled()) {
-        roo::log_err("socket operation canceled");
+        roo::log_err("Socket operation was already cancelled.");
         return false;
     }
 
@@ -452,7 +452,7 @@ void TcpConnAsync::ops_cancel_timeout_call(const boost::system::error_code& ec) 
     } else if (ec == boost::asio::error::operation_aborted) {
         // normal cancel
     } else {
-        roo::log_err("unknown and won't handle error_code: {%d} %s", ec.value(), ec.message().c_str());
+        roo::log_err("Undetected and won't be handled error_code: {%d} %s", ec.value(), ec.message().c_str());
     }
 }
 

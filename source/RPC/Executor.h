@@ -58,8 +58,7 @@ private:
     ExecutorConf conf_;
 
     ExecutorConf get_executor_conf()override {
-        roo::log_err("we should not call here !");
-        SAFE_ASSERT(false);
+        PANIC("This function should not be called.");
         return conf_;
     }
 

@@ -37,10 +37,10 @@ bool RpcClientImpl::init() {
         return true;
     }
 
-    roo::log_info("create new IoService instance.");
+    roo::log_info("Create new IoService instance.");
     roo_io_service_ = make_unique<roo::IoService>();
     if (!roo_io_service_ || !roo_io_service_->init()) {
-        roo::log_err("create and initialized IoService failed.");
+        roo::log_err("Create and initialized IoService failed.");
         return false;
     }
 
@@ -96,7 +96,7 @@ void RpcClientImpl::set_rpc_call_timeout(uint32_t sec, bool sync) {
 void RpcClientImpl::rpc_call_timeout(const boost::system::error_code& ec, bool sync) {
 
     if (ec == 0) {
-        roo::log_warning("rpc_call_timeout called, call start at %lu", time_start_);
+        roo::log_warning("rpc_call_timeout called, call activity started at %lu.", time_start_);
         was_timeout_ = true;
         if (sync) {
             conn_sync_->shutdown_and_close_socket();
@@ -106,7 +106,7 @@ void RpcClientImpl::rpc_call_timeout(const boost::system::error_code& ec, bool s
     } else if (ec == boost::asio::error::operation_aborted) {
         // normal cancel, request handled in-time
     } else {
-        roo::log_err("unknown and won't handle error_code: {%d} %s", ec.value(), ec.message().c_str());
+        roo::log_err("Undetected and won't handle error_code: {%d} %s.", ec.value(), ec.message().c_str());
     }
 }
 
@@ -125,7 +125,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
         socket_ptr->connect(boost::asio::ip::tcp::endpoint(
                                 boost::asio::ip::address::from_string(client_setting_.serv_addr_), client_setting_.serv_port_), ec);
         if (ec) {
-            roo::log_err("connect to %s:%u failed with {%d} %s.",
+            roo::log_err("Connect to %s:%u failed with {%d} %s.",
                          client_setting_.serv_addr_.c_str(), client_setting_.serv_port_,
                          ec.value(), ec.message().c_str());
             return RpcClientStatus::NETWORK_CONNECT_ERROR;
@@ -134,7 +134,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
 
         conn_sync_.reset(new TcpConnSync(socket_ptr, *client_setting_.io_service_, client_setting_));
         if (!conn_sync_) {
-            roo::log_err("create socket %s:%u failed.",
+            roo::log_err("Create socket %s:%u failed.",
                          client_setting_.serv_addr_.c_str(), client_setting_.serv_port_);
             return RpcClientStatus::NETWORK_BEFORE_ERROR;
         }
@@ -153,7 +153,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
     if (!send_rpc_message(rpc_request_message)) {
         conn_sync_.reset();
         if (was_timeout_) {
-            roo::log_err("rpc_call was timeout with %d sec, start before %lu",
+            roo::log_err("rpc_call was timeout with %d sec, and call activity started before %lu ago.",
                          timeout_sec, (::time(NULL) - time_start_));
             return RpcClientStatus::RPC_CALL_TIMEOUT;
         }
@@ -165,7 +165,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
     if (!recv_rpc_message(net_message)) {
         conn_sync_.reset();
         if (was_timeout_) {
-            roo::log_err("rpc_call was timeout with %d sec, start before %lu",
+            roo::log_err("rpc_call was timeout with %d sec, and call activity started before %lu ago.",
                          timeout_sec, (::time(NULL) - time_start_));
             return RpcClientStatus::RPC_CALL_TIMEOUT;
         }
@@ -183,7 +183,8 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
         // rpc_response_message.header_.version != kRpcHeaderVersion ||
         rpc_response_message.header_.service_id != service_id ||
         rpc_response_message.header_.opcode != opcode) {
-        roo::log_err("rpc_response_message header check error: %s", rpc_response_message.header_.dump().c_str());
+        roo::log_err("rpc_response_message header check error, full message header dump: %s]", 
+                     rpc_response_message.header_.dump().c_str());
         return RpcClientStatus::RECV_FORMAT_ERROR;
     }
 
@@ -225,7 +226,8 @@ void RpcClientImpl::async_recv_wrapper(const tzrpc::Message& net_message) {
             // rpc_response_message.header_.service_id != service_id ||
            // rpc_response_message.header_.opcode != opcode
            ) {
-            roo::log_err("rpc_response_message header check error: %s", rpc_response_message.header_.dump().c_str());
+            roo::log_err("rpc_response_message header check error, full message header dump: %s]", 
+                         rpc_response_message.header_.dump().c_str());
             status = RpcClientStatus::RECV_FORMAT_ERROR;
             break;
         }
@@ -264,7 +266,7 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
         socket_ptr->connect(boost::asio::ip::tcp::endpoint(
                                 boost::asio::ip::address::from_string(client_setting_.serv_addr_), client_setting_.serv_port_), ec);
         if (ec) {
-            roo::log_err("connect to %s:%u failed with {%d} %s.",
+            roo::log_err("Connect to %s:%u failed with {%d} %s.",
                          client_setting_.serv_addr_.c_str(), client_setting_.serv_port_,
                          ec.value(), ec.message().c_str());
             return RpcClientStatus::NETWORK_CONNECT_ERROR;
@@ -275,8 +277,8 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
                                            std::bind(&RpcClientImpl::async_recv_wrapper, shared_from_this(),
                                                      std::placeholders::_1)));
         if (!conn_async_) {
-            roo::log_err("create socket %s:%u failed.",
-                         client_setting_.serv_addr_.c_str(), client_setting_.serv_port_);
+            roo::log_err("Create socket %s:%u failed.",
+                        client_setting_.serv_addr_.c_str(), client_setting_.serv_port_);
             return RpcClientStatus::NETWORK_BEFORE_ERROR;
         }
 
@@ -297,8 +299,8 @@ RpcClientStatus RpcClientImpl::call_RPC(uint16_t service_id, uint16_t opcode,
         conn_async_.reset();
         // 异步发送应该很快返回的，理论上不会在这里出现超时
         if (was_timeout_) {
-            roo::log_err("rpc_call was timeout with %d sec, start before %lu",
-                         timeout_sec, (::time(NULL) - time_start_));
+            roo::log_err("rpc_call was timeout with %d sec, and call activity started before %lu ago.",
+                        timeout_sec, (::time(NULL) - time_start_));
             return RpcClientStatus::RPC_CALL_TIMEOUT;
         }
         return RpcClientStatus::NETWORK_SEND_ERROR;

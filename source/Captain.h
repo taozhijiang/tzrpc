@@ -41,7 +41,7 @@ private:
     ~Captain() {
         // Singleton should not destoried normally,
         // if happens, just terminate quickly
-        ::exit(0);
+        ::exit(EXIT_SUCCESS);
     }
 
 
@@ -49,6 +49,7 @@ private:
 
 public:
 
+    // 网络主框架
     std::shared_ptr<NetServer> net_server_ptr_;
 
     std::shared_ptr<roo::Setting> setting_ptr_;

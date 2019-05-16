@@ -28,7 +28,7 @@ RpcClient::RpcClient(const std::string& addr, uint16_t port, const rpc_handler_t
 
     client_setting_.handler_ = handler;
     if (!init(addr, port))
-        throw roo::ConstructException("construct RpcClient failed.");
+        throw roo::ConstructException("Construct RpcClient failed.");
 }
 
 RpcClient::RpcClient(const std::string& cfgFile, const rpc_handler_t& handler) :
@@ -37,7 +37,7 @@ RpcClient::RpcClient(const std::string& cfgFile, const rpc_handler_t& handler) :
 
     client_setting_.handler_ = handler;
     if (!init(cfgFile))
-        throw roo::ConstructException("construct RpcClient failed.");
+        throw roo::ConstructException("Construct RpcClient failed.");
 }
 
 RpcClient::RpcClient(const libconfig::Setting& setting, const rpc_handler_t& handler) :
@@ -46,14 +46,14 @@ RpcClient::RpcClient(const libconfig::Setting& setting, const rpc_handler_t& han
 
     client_setting_.handler_ = handler;
     if (!init(setting))
-        throw roo::ConstructException("construct RpcClient failed.");
+        throw roo::ConstructException("Construct RpcClient failed.");
 }
 
 RpcClient::RpcClient(const RpcClientSetting& setting):
     initialized_(false),
     client_setting_(setting) {   
    if (!init(setting.serv_addr_, setting.serv_port_))
-        throw roo::ConstructException("construct RpcClient failed.");
+        throw roo::ConstructException("Construct RpcClient failed.");
 }
 
 RpcClient::~RpcClient() { }
@@ -61,7 +61,7 @@ RpcClient::~RpcClient() { }
 bool RpcClient::init(const std::string& addr, uint16_t port) {
 
     if (initialized_) {
-        roo::log_err("RpcClient already successfully initialized...");
+        roo::log_err("RpcClient already successfully initialized ...");
         return true;
     }
 
@@ -73,7 +73,7 @@ bool RpcClient::init(const std::string& addr, uint16_t port) {
 
     impl_.reset(new RpcClientImpl(std::cref(client_setting_)));
     if (!impl_ || !impl_->init()) {
-        roo::log_err("create impl failed.");
+        roo::log_err("Create RpcClientImpl failed.");
         return false;
     }
 
@@ -109,7 +109,8 @@ bool RpcClient::init(const libconfig::Setting& setting) {
         !setting.lookupValue("serv_port", client_setting_.serv_port_) ||
         client_setting_.serv_addr_.empty() ||
         client_setting_.serv_port_ <= 0) {
-        roo::log_err("get rpc server addr config failed.");
+        roo::log_err("invalid serv_addr and serv_port: %s, %d.", 
+                      client_setting_.serv_addr_.c_str(), client_setting_.serv_port_);
         return false;
     }
 
@@ -155,7 +156,7 @@ RpcClientStatus RpcClient::call_RPC(uint16_t service_id, uint16_t opcode,
     }
 
     if (!client_setting_.handler_) {
-        roo::log_err("using async interface, but rpc_handler_t not provide.");
+        roo::log_err("using async interface, but mandatory rpc_handler_t not provide.");
         return RpcClientStatus::NETWORK_BEFORE_ERROR;
     }
 
