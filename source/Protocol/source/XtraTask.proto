@@ -2,8 +2,8 @@
 package tzrpc.XtraTask;
 
 enum OpCode {
-    CMD_READ = 1;
-    CMD_WRITE = 2;
+    CMD_READ    = 1;
+    CMD_WRITE   = 2;
 };
 
 message XtraReadOps {

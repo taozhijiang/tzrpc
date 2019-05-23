@@ -1,3 +1,5 @@
+.vscode/
+_gsdata_
 *.vpj
 *.vpw
 *.vpwhist

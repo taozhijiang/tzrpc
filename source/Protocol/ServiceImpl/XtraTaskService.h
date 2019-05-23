@@ -6,22 +6,22 @@
 #include <RPC/Service.h>
 #include <RPC/RpcInstance.h>
 
-#include <Scaffold/ConfHelper.h>
+#include <scaffold/Setting.h>
 
 #include "RpcServiceBase.h"
 
 namespace tzrpc {
 
-class XtraTaskService : public Service, 
-                        public RpcServiceBase {
+class XtraTaskService : public Service,
+    public RpcServiceBase {
 
 public:
-    explicit XtraTaskService(const std::string& instance_name):
+    explicit XtraTaskService(const std::string& instance_name) :
         RpcServiceBase(instance_name),
         instance_name_(instance_name) {
     }
 
-    ~XtraTaskService() {}
+    ~XtraTaskService() { }
 
     void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance);
     std::string instance_name() {

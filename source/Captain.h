@@ -8,10 +8,16 @@
 #ifndef __SCAFFOLD_CAPTAIN_H__
 #define __SCAFFOLD_CAPTAIN_H__
 
+#include <memory>
 #include <string>
 #include <map>
 #include <vector>
 
+namespace roo {
+class Setting;
+class Status;
+class Timer;
+}
 
 namespace tzrpc {
 
@@ -35,7 +41,7 @@ private:
     ~Captain() {
         // Singleton should not destoried normally,
         // if happens, just terminate quickly
-        ::exit(0);
+        ::exit(EXIT_SUCCESS);
     }
 
 
@@ -43,7 +49,13 @@ private:
 
 public:
 
+    // 网络主框架
     std::shared_ptr<NetServer> net_server_ptr_;
+
+    std::shared_ptr<roo::Setting> setting_ptr_;
+    std::shared_ptr<roo::Status> status_ptr_;
+    std::shared_ptr<roo::Timer> timer_ptr_;
+
 };
 
 } // end namespace tzrpc

@@ -11,29 +11,31 @@
 
 #include <xtra_rhel.h>
 
-#include <Utils/Log.h>
-#include <Utils/EQueue.h>
+#include <other/Log.h>
+
+#include <container/EQueue.h>
+#include <concurrency/ThreadPool.h>
+#include <scaffold/Setting.h>
+
 #include <RPC/Service.h>
 
-#include <Utils/ThreadPool.h>
-#include <Scaffold/ConfHelper.h>
 
 namespace tzrpc {
 
 
-class Executor: public Service,
-                public std::enable_shared_from_this<Executor> {
+class Executor : public Service,
+    public std::enable_shared_from_this<Executor> {
 
 public:
 
-    explicit Executor(std::shared_ptr<Service> service_impl):
+    explicit Executor(std::shared_ptr<Service> service_impl) :
         service_impl_(service_impl),
         rpc_queue_(),
         conf_lock_(),
-        conf_({}) {
+        conf_({ }) {
     }
 
-    void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) override {
+    void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance)override {
         rpc_queue_.PUSH(rpc_instance);
     }
 
@@ -47,7 +49,7 @@ public:
 
 private:
     std::shared_ptr<Service> service_impl_;
-    EQueue<std::shared_ptr<RpcInstance>> rpc_queue_;
+    roo::EQueue<std::shared_ptr<RpcInstance>> rpc_queue_;
 
 private:
     // 这个锁保护conf_使用的，因为使用频率不是很高，所以所有访问
@@ -55,28 +57,27 @@ private:
     std::mutex   conf_lock_;
     ExecutorConf conf_;
 
-    ExecutorConf get_executor_conf() override {
-        log_err("we should not call here !");
-        SAFE_ASSERT(false);
+    ExecutorConf get_executor_conf()override {
+        PANIC("This function should not be called.");
         return conf_;
     }
 
 
-    ThreadPool executor_threads_;
-    void executor_service_run(ThreadObjPtr ptr);  // main task loop
+    roo::ThreadPool executor_threads_;
+    void executor_service_run(roo::ThreadObjPtr ptr);  // main task loop
 
 public:
 
     int executor_start() {
 
-        log_notice("about to start executor for host %s ... ", instance_name().c_str());
+        roo::log_info("about to start executor for host %s ... ", instance_name().c_str());
         executor_threads_.start_threads();
         return 0;
     }
 
     int executor_stop_graceful() {
 
-        log_notice("about to stop executor for host %s ... ", instance_name().c_str());
+        roo::log_info("about to stop executor for host %s ... ", instance_name().c_str());
         executor_threads_.graceful_stop_threads();
 
         return 0;
@@ -84,7 +85,7 @@ public:
 
     int executor_join() {
 
-        log_notice("about to join executor for host %s ... ", instance_name().c_str());
+        roo::log_info("about to join executor for host %s ... ", instance_name().c_str());
         executor_threads_.join_threads();
         return 0;
     }

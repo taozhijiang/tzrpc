@@ -16,7 +16,7 @@ namespace tzrpc_client {
 // 服务端的错误码应该包含客户端传递过来的错误码，同时
 // 还应该包含其他原因导致的服务错误的状态
 
-enum class RpcClientStatus: uint8_t {
+enum class RpcClientStatus : uint8_t {
 
 
     OK = 0,
@@ -35,7 +35,10 @@ enum class RpcClientStatus: uint8_t {
     INVALID_REQUEST = 4,
 
     SYSTEM_ERROR    = 5,
-    // 以上部分是和服务端相互兼容的
+    // 以上部分是和服务端相互兼容的，客户端和服务端必须同时改动
+
+
+    // 以下是在客户端独有的错误信息
 
     // 未发送网络请求，客户端可以考虑重发
     NETWORK_BEFORE_ERROR  = 10,

@@ -1,0 +1,6 @@
+#ifndef __HERACLES_CONFIG_H__
+#define __HERACLES_CONFIG_H__
+
+static const char* PROGRAM_VERSION = "@PROGRAM_VERSION@";
+
+#endif // __HERACLES_CONFIG_H__

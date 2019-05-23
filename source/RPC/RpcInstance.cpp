@@ -5,7 +5,7 @@
  *
  */
 
-
+#include <other/Log.h>
 #include <RPC/RpcInstance.h>
 
 namespace tzrpc {
@@ -24,7 +24,7 @@ bool RpcInstance::validate_request() {
     header.from_net_endian();
 
     if (header.magic != kRpcHeaderMagic ||
-        header.version != kRpcHeaderVersion ) {
+        header.version != kRpcHeaderVersion) {
         return false;
     }
 
@@ -40,8 +40,7 @@ bool RpcInstance::validate_request() {
     rpc_request_message_.header_ = header;
     rpc_request_message_.payload_ = msg_str;
 
-    log_debug("validate/parse request_message for rpc_instance: %s", rpc_request_message_.dump().c_str());
-
+    roo::log_info("Validate/Parse RpcRequestMessage successfully: %s", rpc_request_message_.dump().c_str());
     return true;
 }
 
@@ -53,7 +52,7 @@ void RpcInstance::reply_rpc_message(const std::string& msg) {
 
     auto sock = full_socket_.lock();
     if (!sock) {
-        log_err("socket already release before.");
+        roo::log_err("Socket already release before, give up reply.");
         return;
     }
 
@@ -68,7 +67,7 @@ void RpcInstance::reject(RpcResponseStatus status) {
 
     auto sock = full_socket_.lock();
     if (!sock) {
-        log_err("socket already release before.");
+        roo::log_err("Socket already release before, give up reply.");
         return;
     }
 

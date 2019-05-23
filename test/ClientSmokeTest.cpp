@@ -6,11 +6,12 @@ using namespace ::testing;
 
 #include <Core/Message.h>
 #include <Core/Buffer.h>
-#include <Scaffold/ConfHelper.h>
+
+#include <scaffold/Setting.h>
+#include <other/Log.h>
 
 #include <Protocol/Common.h>
 
-#include <Client/LogClient.h>
 #include <Client/include/RpcClient.h>
 #include <Protocol/gen-cpp/XtraTask.pb.h>
 
@@ -24,17 +25,16 @@ TEST(ClientSmokeTest, ClientConnTest) {
 
 
     std::string cfgFile = "tzrpc.conf";
+    auto setting_ptr_ = std::make_shared<roo::Setting>();
+    ASSERT_THAT(setting_ptr_ && setting_ptr_->init(cfgFile), Eq(true));
 
-    bool b_ret = ConfHelper::instance().init(cfgFile);
-    ASSERT_TRUE(b_ret);
-
-    auto conf_ptr = ConfHelper::instance().get_conf();
-    ASSERT_TRUE(conf_ptr);
+    auto setting_ptr = setting_ptr_->get_setting();
+    ASSERT_TRUE(setting_ptr);
 
     std::string addr_ip;
     int         bind_port;
-    conf_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
-    conf_ptr->lookupValue("rpc.client.serv_port", bind_port);
+    setting_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
+    setting_ptr->lookupValue("rpc.client.serv_port", bind_port);
 
     std::string msg_str("nicol, taoz from test");
 
@@ -81,32 +81,31 @@ TEST(ClientSmokeTest, ClientConnTest) {
 TEST(ClientSmokeTest, RpcClientTest) {
 
     std::string cfgFile = "tzrpc.conf";
+    auto setting_ptr_ = std::make_shared<roo::Setting>();
+    ASSERT_THAT(setting_ptr_ && setting_ptr_->init(cfgFile), Eq(true));
 
-    bool b_ret = ConfHelper::instance().init(cfgFile);
-    ASSERT_TRUE(b_ret);
-
-    auto conf_ptr = ConfHelper::instance().get_conf();
-    ASSERT_TRUE(conf_ptr);
+    auto setting_ptr = setting_ptr_->get_setting();
+    ASSERT_TRUE(setting_ptr);
 
     std::string addr_ip;
     int         bind_port;
-    conf_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
-    conf_ptr->lookupValue("rpc.client.serv_port", bind_port);
+    setting_ptr->lookupValue("rpc.client.serv_addr", addr_ip);
+    setting_ptr->lookupValue("rpc.client.serv_port", bind_port);
 
 
     std::string msg_str("nicol, taoz from test rpc");
 
     RpcClient client(addr_ip, bind_port);
-    tzrpc_client::log_debug("create client with %s:%u", addr_ip.c_str(), bind_port);
+    roo::log_debug("create client with %s:%u", addr_ip.c_str(), bind_port);
 
     std::string rsp_str1;
     client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_READ, msg_str, rsp_str1);
-    tzrpc_client::log_debug("rpc_call_result: %s", rsp_str1.c_str());
+    roo::log_debug("rpc_call_result: %s", rsp_str1.c_str());
     ASSERT_THAT(rsp_str1.size(), Gt(0));
 
     std::string rsp_str2;
     client.call_RPC(ServiceID::XTRA_TASK_SERVICE, XtraTask::OpCode::CMD_WRITE, msg_str, rsp_str2);
-    tzrpc_client::log_debug("rpc_call_result: %s", rsp_str2.c_str());
+    roo::log_debug("rpc_call_result: %s", rsp_str2.c_str());
     ASSERT_THAT(rsp_str2.size(), Gt(0));
 }
 
