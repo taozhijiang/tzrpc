@@ -2,7 +2,7 @@
 #define __PROTOCOL_RPC_SERVICE_BASE_H__
 
 #include <string>
-#include <libconfig.h++>
+#include <libconfig/libconfig.h++>
 
 #include <other/Log.h>
 

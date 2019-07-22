@@ -8,7 +8,7 @@
 #ifndef __RPC_SERVICE_H__
 #define __RPC_SERVICE_H__
 
-#include <libconfig.h++>
+#include <libconfig/libconfig.h++>
 
 #include <memory>
 #include <string>
