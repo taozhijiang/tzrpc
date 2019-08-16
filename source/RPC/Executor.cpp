@@ -9,12 +9,12 @@
 #include <xtra_rhel.h>
 
 #include <scaffold/Status.h>
+#include <concurrency/Timer.h>
 
 #include <RPC/RpcInstance.h>
 #include <RPC/Executor.h>
 #include <RPC/Dispatcher.h>
 
-#include <concurrency/Timer.h>
 
 #include <Captain.h>
 

@@ -37,12 +37,12 @@ TcpConnAsync::TcpConnAsync(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
     set_tcp_nodelay(true);
     set_tcp_nonblocking(true);
 
-    ++ current_concurrency_;
+    ++current_concurrency_;
 }
 
 TcpConnAsync::~TcpConnAsync() {
 
-    -- current_concurrency_;
+    --current_concurrency_;
     roo::log_info("TcpConnAsync SOCKET RELEASED!!!");
 }
 
@@ -151,8 +151,8 @@ void TcpConnAsync::read_handler(const boost::system::error_code& ec, std::size_t
     recv_bound_.buffer_.append_internal(str);
 
     if (recv_bound_.buffer_.get_length() < sizeof(Header)) {
-         roo::log_err("Expect recv at least head length: %d, but only get %d. do_read again...",
-                      static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
+        roo::log_err("Expect recv at least head length: %d, but only get %d. do_read again...",
+                     static_cast<int>(sizeof(Header)), static_cast<int>(recv_bound_.buffer_.get_length()));
         do_read();
         return;
     }
@@ -237,7 +237,7 @@ void TcpConnAsync::do_read_msg() {
             return;
 
         }
-        
+
         roo::log_err("Recv message body error found, shutdown connection ...");
         sock_shutdown_and_close(ShutdownType::kBoth);
         return;
@@ -277,7 +277,7 @@ void TcpConnAsync::read_msg_handler(const boost::system::error_code& ec, size_t 
         return do_read_msg();
 
     }
-    
+
     roo::log_err("read_msg_handler error found, shutdown connection...");
     sock_shutdown_and_close(ShutdownType::kBoth);
     return;

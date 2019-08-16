@@ -2,8 +2,8 @@
 #define __PROTOCOL_RPC_SERVICE_BASE_H__
 
 #include <string>
-#include <libconfig/libconfig.h++>
 
+#include <scaffold/Setting.h>
 #include <other/Log.h>
 
 namespace tzrpc {

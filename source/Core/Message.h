@@ -30,7 +30,7 @@ struct Header {
     uint32_t rev2;
 
     std::string dump() const {
-        char msg[64] {};
+        char msg[64]{};
         snprintf(msg, sizeof(msg), "mgc:%0x, ver:%0x, len:%u",
                  magic, version, length);
         return msg;
@@ -49,7 +49,7 @@ struct Header {
         length  = htobe32(length);
     }
 
-} __attribute__ ((__packed__));
+} __attribute__((__packed__));
 
 
 struct Message {
@@ -57,13 +57,13 @@ struct Message {
     Header header_;
     std::string payload_;
 
-    Message():
-        header_({}),
-        payload_({}) {
+    Message() :
+        header_({ }),
+        payload_({ }) {
     }
 
-    explicit Message(const std::string& data):
-        header_({}),
+    explicit Message(const std::string& data) :
+        header_({ }),
         payload_(data) {
         header_.magic   = kHeaderMagic;
         header_.version = kHeaderVersion;

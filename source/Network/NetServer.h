@@ -9,9 +9,8 @@
 #define __NETWORK_NET_SERVER_H__
 
 #include <xtra_rhel.h>
-
-#include <mutex>
-#include <libconfig/libconfig.h++>
+#include <scaffold/Status.h>
+#include <scaffold/Setting.h>
 
 #include <other/Log.h>
 
@@ -92,7 +91,7 @@ private:
     }
 
     void withdraw_service_token() {    // 支持将令牌还回去
-        ++ service_token_;
+        ++service_token_;
     }
 
     // 喂狗

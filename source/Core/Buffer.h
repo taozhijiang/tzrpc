@@ -23,16 +23,16 @@ class Buffer {
 public:
     // 构造函数
 
-    Buffer():
-        data_ ({}) {
+    Buffer() :
+        data_({ }) {
     }
 
-    explicit Buffer(const std::string& data):
+    explicit Buffer(const std::string& data) :
         data_(data.begin(), data.end()) {
     }
 
-    explicit Buffer(const Message& msg):
-        data_({}) {
+    explicit Buffer(const Message& msg) :
+        data_({ }) {
         Header header = msg.header_;
         header.to_net_endian();
 
@@ -41,7 +41,7 @@ public:
         append_internal(msg.payload_);
     }
 
-    ~Buffer() {}
+    ~Buffer() { }
 
     // 禁止拷贝
     Buffer(const Buffer&) = delete;
@@ -94,7 +94,7 @@ public:
             return false;
         }
 
-        ::memcpy(store, data_.data(), sz );
+        ::memcpy(store, data_.data(), sz);
 
         // 之前的设计思路:
         // 先将send_bound_中的数据拷贝到io_block_中进行发送，然后根据传输的结果
@@ -122,9 +122,9 @@ public:
     // 访问内部原始的字符串成员数据
     char* get_data() {
         if (data_.empty()) {
-            return static_cast<char *>(nullptr);
+            return static_cast<char*>(nullptr);
         }
-        return static_cast<char *>(data_.data());
+        return static_cast<char*>(data_.data());
     }
 
     uint32_t get_length() {

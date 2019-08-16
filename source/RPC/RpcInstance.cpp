@@ -5,8 +5,9 @@
  *
  */
 
-#include <other/Log.h>
 #include <RPC/RpcInstance.h>
+
+#include <other/Log.h>
 
 namespace tzrpc {
 

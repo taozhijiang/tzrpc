@@ -11,7 +11,6 @@
 #include <Network/NetServer.h>
 
 #include <concurrency/Timer.h>
-
 #include <scaffold/Setting.h>
 #include <scaffold/Status.h>
 
@@ -69,7 +68,7 @@ bool Captain::init(const std::string& cfgFile) {
 
     std::string log_path;
     setting_ptr->lookupValue("log_path", log_path);
-    if(log_path.empty())
+    if (log_path.empty())
         log_path = "./log";
 
     roo::log_init(log_level, "", log_path, LOG_LOCAL6);

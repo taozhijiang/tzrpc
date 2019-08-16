@@ -8,10 +8,11 @@
 #ifndef __RPC_SERVICE_H__
 #define __RPC_SERVICE_H__
 
-#include <libconfig/libconfig.h++>
 
 #include <memory>
 #include <string>
+
+#include <scaffold/Setting.h>
 
 // real rpc should implement this interface class
 
@@ -35,7 +36,7 @@ class Service {
 public:
     Service() = default;
     virtual ~Service() = default;
-    
+
 
     // 根据opCode分发rpc请求的处理
     virtual void handle_RPC(std::shared_ptr<RpcInstance> rpc_instance) = 0;

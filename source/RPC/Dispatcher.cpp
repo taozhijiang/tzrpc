@@ -5,16 +5,15 @@
  *
  */
 
-#include <other/Log.h>
 #include <scaffold/Setting.h>
-
-#include <Captain.h>
 
 #include <RPC/Service.h>
 #include <RPC/Executor.h>
 #include <RPC/RpcInstance.h>
-
 #include <RPC/Dispatcher.h>
+
+#include <Captain.h>
+#include <other/Log.h>
 
 namespace tzrpc {
 

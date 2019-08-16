@@ -11,7 +11,6 @@
 
 #include <xtra_rhel.h>
 
-#include <other/Log.h>
 
 #include <container/EQueue.h>
 #include <concurrency/ThreadPool.h>
@@ -19,6 +18,7 @@
 
 #include <RPC/Service.h>
 
+#include <other/Log.h>
 
 namespace tzrpc {
 
@@ -70,14 +70,14 @@ public:
 
     int executor_start() {
 
-        roo::log_info("about to start executor for host %s ... ", instance_name().c_str());
+        roo::log_warning("about to start executor for host %s ... ", instance_name().c_str());
         executor_threads_.start_threads();
         return 0;
     }
 
     int executor_stop_graceful() {
 
-        roo::log_info("about to stop executor for host %s ... ", instance_name().c_str());
+        roo::log_warning("about to stop executor for host %s ... ", instance_name().c_str());
         executor_threads_.graceful_stop_threads();
 
         return 0;
@@ -85,7 +85,7 @@ public:
 
     int executor_join() {
 
-        roo::log_info("about to join executor for host %s ... ", instance_name().c_str());
+        roo::log_warning("about to join executor for host %s ... ", instance_name().c_str());
         executor_threads_.join_threads();
         return 0;
     }

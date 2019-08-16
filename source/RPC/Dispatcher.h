@@ -8,9 +8,9 @@
 #ifndef __RPC_DISPATCHER_H__
 #define __RPC_DISPATCHER_H__
 
-#include <cinttypes>
-#include <memory>
+#include <xtra_rhel.h>
 
+#include <cinttypes>
 #include <map>
 #include <mutex>
 
@@ -22,6 +22,8 @@ class Service;
 class Executor;
 
 class Dispatcher {
+
+    __noncopyable__(Dispatcher)
 
 public:
     static Dispatcher& instance();
@@ -44,12 +46,7 @@ private:
         services_({ }) {
     }
 
-    ~Dispatcher() {
-    }
-
-    // 禁止拷贝
-    Dispatcher(const Dispatcher&) = delete;
-    Dispatcher& operator=(const Dispatcher&) = delete;
+    ~Dispatcher() = default;
 
     bool initialized_;
 
