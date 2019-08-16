@@ -5,16 +5,15 @@
  *
  */
 
-#include <other/Log.h>
 #include <scaffold/Setting.h>
-
-#include <Captain.h>
 
 #include <RPC/Service.h>
 #include <RPC/Executor.h>
 #include <RPC/RpcInstance.h>
-
 #include <RPC/Dispatcher.h>
+
+#include <Captain.h>
+#include <other/Log.h>
 
 namespace tzrpc {
 
@@ -41,7 +40,7 @@ bool Dispatcher::init() {
     }
 
     // 注册配置动态配置更新接口，由此处分发到各个虚拟主机，不再每个虚拟主机自己注册
-    Captain::instance().setting_ptr_->attach_runtime_callback(
+    Captain::instance().setting_ptr()->attach_runtime_callback(
         "Dispatcher",
         std::bind(&Dispatcher::module_runtime, this,
                   std::placeholders::_1));

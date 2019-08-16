@@ -11,7 +11,7 @@ namespace tzrpc {
 
 bool XtraTaskService::init() {
 
-    auto setting_ptr = Captain::instance().setting_ptr_->get_setting();
+    auto setting_ptr = Captain::instance().setting_ptr()->get_setting();
     if (!setting_ptr) {
         roo::log_err("Setting not initialized? return setting_ptr empty!!!");
         return false;

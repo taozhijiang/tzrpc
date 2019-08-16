@@ -127,7 +127,7 @@ void NetConf::timed_feed_token_handler(const boost::system::error_code& ec) {
 
 bool NetServer::init() {
 
-    auto setting_ptr = Captain::instance().setting_ptr_->get_setting();
+    auto setting_ptr = Captain::instance().setting_ptr()->get_setting();
 
     // protect cfg race conditon
     std::lock_guard<std::mutex> lock(conf_.lock_);
@@ -169,13 +169,13 @@ bool NetServer::init() {
     }
 
     // 注册配置动态更新的回调函数
-    Captain::instance().setting_ptr_->attach_runtime_callback(
+    Captain::instance().setting_ptr()->attach_runtime_callback(
         "NetServer",
         std::bind(&NetServer::module_runtime, this,
                   std::placeholders::_1));
 
     // 系统状态展示相关的初始化
-    Captain::instance().status_ptr_->attach_status_callback(
+    Captain::instance().status_ptr()->attach_status_callback(
         "NetServer",
         std::bind(&NetServer::module_status, this,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
