@@ -8,6 +8,8 @@
 #ifndef __SCAFFOLD_CAPTAIN_H__
 #define __SCAFFOLD_CAPTAIN_H__
 
+#include <xtra_rhel.h>
+
 #include <memory>
 #include <string>
 #include <map>
@@ -25,6 +27,9 @@ namespace tzrpc {
 class NetServer;
 
 class Captain {
+        
+    __noncopyable__(Captain)
+        
 public:
     static Captain& instance();
 
@@ -47,8 +52,24 @@ private:
 
     bool initialized_;
 
-public:
 
+public:
+    std::shared_ptr<roo::Setting>& setting_ptr() {
+        SAFE_ASSERT(setting_ptr_);
+        return setting_ptr_;
+    }
+
+    std::shared_ptr<roo::Status>&  status_ptr()  {
+        SAFE_ASSERT(status_ptr_);
+        return status_ptr_;
+    }
+
+    std::shared_ptr<roo::Timer>&   timer_ptr()   {
+        SAFE_ASSERT(timer_ptr_);
+        return timer_ptr_;
+    }
+
+private:
 
     // 网络主框架
     std::shared_ptr<NetServer> net_server_ptr_;

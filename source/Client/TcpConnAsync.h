@@ -31,6 +31,7 @@ typedef std::function<void(const tzrpc::Message& net_message)> rpc_wrapper_t;
 class TcpConnAsync : public NetConn,
     public std::enable_shared_from_this<TcpConnAsync> {
 
+    __noncopyable__(TcpConnAsync)
     friend class RpcClientImpl;
 
 public:
@@ -42,10 +43,6 @@ public:
                  const rpc_wrapper_t& handler);
 
     virtual ~TcpConnAsync();
-
-    // 禁止拷贝
-    TcpConnAsync(const TcpConnAsync&) = delete;
-    TcpConnAsync& operator=(const TcpConnAsync&) = delete;
 
     bool send_net_message(const Message& msg) {
 

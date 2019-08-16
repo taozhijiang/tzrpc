@@ -20,6 +20,8 @@ namespace tzrpc {
 
 class Buffer {
 
+    __noncopyable__(Buffer)
+
 public:
     // 构造函数
 
@@ -41,11 +43,9 @@ public:
         append_internal(msg.payload_);
     }
 
-    ~Buffer() { }
+    ~Buffer() = default;
 
-    // 禁止拷贝
-    Buffer(const Buffer&) = delete;
-    Buffer& operator=(const Buffer&) = delete;
+
     // used internally, user should prefer Message
     // 内部使用的接口，用户应该只使用下面的Message重载版本
     uint32_t append_internal(const std::string& data) {

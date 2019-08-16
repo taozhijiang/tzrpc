@@ -10,6 +10,8 @@
 
 // 同步的TCP连接，主要用于客户端使用
 
+#include <xtra_rhel.h>
+
 #include <other/Log.h>
 #include <Network/NetConn.h>
 
@@ -25,6 +27,7 @@ class RpcClientSetting;
 class TcpConnSync : public NetConn,
     public std::enable_shared_from_this<TcpConnSync> {
 
+    __noncopyable__(TcpConnSync)
     friend class RpcClientImpl;
 
 public:
@@ -34,10 +37,6 @@ public:
                          boost::asio::io_service& io_service,
                          RpcClientSetting& client_setting);
     virtual ~TcpConnSync();
-
-    // 禁止拷贝
-    TcpConnSync(const TcpConnSync&) = delete;
-    TcpConnSync& operator=(const TcpConnSync&) = delete;
 
     bool recv_net_message(Message& msg) {
         return do_read(msg);

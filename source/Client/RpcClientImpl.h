@@ -8,6 +8,8 @@
 #ifndef __RPC_CLIENT_IMPL_H__
 #define __RPC_CLIENT_IMPL_H__
 
+#include <xtra_rhel.h>
+
 #include <boost/asio/steady_timer.hpp>
 using boost::asio::steady_timer;
 
@@ -39,6 +41,9 @@ class TcpConnAsync;
 typedef std::function<void(const tzrpc::Message& net_message)> rpc_wrapper_t;
 
 class RpcClientImpl : public std::enable_shared_from_this<RpcClientImpl> {
+
+   __noncopyable__(RpcClientImpl)
+
 public:
     RpcClientImpl(const RpcClientSetting& client_setting) :
         client_setting_(client_setting),
@@ -61,10 +66,6 @@ public:
     }
 
     bool init();
-
-    // 禁止拷贝
-    RpcClientImpl(const RpcClientImpl&) = delete;
-    RpcClientImpl& operator=(const RpcClientImpl&) = delete;
 
     RpcClientStatus call_RPC(uint16_t service_id, uint16_t opcode,
                              const std::string& payload, std::string& respload,
